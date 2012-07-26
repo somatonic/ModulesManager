@@ -1,0 +1,369 @@
+<?php
+
+/**
+ * ProcessWire Modules Manager
+ *
+ * ProcessWire 2.x
+ * Copyright (C) 2010 by Ryan Cramer
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * http://www.processwire.com
+ * http://www.ryancramer.com
+ *
+ */
+
+class ModulesManager extends Process implements ConfigurableModule {
+
+
+	protected $modulesArray = array();
+
+	protected $modulesRemoteArray = array();
+
+	protected $modulelistURL = "http://modules.processwire.com/export-json/?apikey=pw223&sort=-modified&debug=0&limit=100";
+
+	protected $cacheFile = "ModuleManager.cache";
+	protected $downloadFileName = "ModuleManagerDownload.zip";
+
+	/**
+	 * getModuleInfo is a module required by all modules to tell ProcessWire about them
+	 *
+	 * @return array
+	 *
+	 */
+	public static function getModuleInfo() {
+
+		return array(
+			'title' => 'Modules Manager',
+			'version' => 001,
+			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them',
+			'href' => '',
+			'singular' => true,
+			'autoload' => false
+			);
+	}
+
+
+	public function init() {
+		return parent::init();
+	}
+
+	protected function formatVersion($version) {
+		return preg_replace('/(\d)(?=\d)/', '$1.', str_pad("$version", 3, "0", STR_PAD_LEFT));
+	}
+
+	public function execute() {
+
+		$out = '';
+
+		$cachefile = $this->config->paths->cache . $this->cacheFile;
+
+		// reset cache to scan for new modules downloaded
+		if($this->input->get->reset) {
+			$this->modules->resetCache();
+			$this->createCacheFile($cachefile);
+			$this->session->redirect("./");
+		}
+		// get json module feed
+
+		if(file_exists($cachefile)){
+			$this->modulesRemoteArray = $this->readCacheFile($cachefile);
+		} else {
+			$this->modulesRemoteArray = $this->createCacheFile($cachefile);
+		}
+
+		foreach($this->modules as $module) $this->modulesArray[$module->className()] = 1;
+		foreach($this->modules->getInstallable() as $module) $this->modulesArray[basename($module, '.module')] = 0;
+
+		$moduletbl = wire('modules')->get('MarkupAdminDataTable');
+		$moduletbl->setEncodeEntities(false);
+		$header = array(
+						$this->_("name"),
+						$this->_("class name"),
+						$this->_("categories"),
+						$this->_("author(s)"),
+						$this->_("modified"),
+						$this->_("release"),
+						$this->_("version"),
+						$this->_("status"),
+						$this->_("action")
+					);
+
+		$moduletbl->headerRow($header);
+
+		$count = 0;
+
+		foreach($this->modulesRemoteArray->items as $key => $module) {
+
+			$categories = array();
+			foreach($module->categories as $cat) $categories[] = $cat->title;
+
+			$authors = array();
+			foreach($module->authors as $auth) $authors[] = $auth->title;
+
+			$status = '<span class="">not found</span>';
+			$version = '-';
+			$actions = '-';
+			$remote_version = '-';
+
+			// exclude language packs modules
+			if(in_array('Language Packs',$categories)) continue;
+			if(in_array('Admin Themes',$categories)) continue;
+
+			if(array_key_exists($module->class_name, $this->modulesArray)) {
+
+				if($this->modulesArray[$module->class_name] == 0) {
+					$status = 'found / not installed';
+					$remote_version = $this->formatVersion($module->module_version);
+					$actions = "<button type='submit' id='install_$module->class_name' name='install' class='install' value='$module->class_name'>" . $this->_x('install', 'button') . "</button>";
+				} else {
+					$status = '<span class="ui-state-highlight">found / installed </span>';
+					$_modinstalled = wire("modules")->get($module->class_name);
+					$infos = $_modinstalled->getModuleInfo();
+
+					$local_version = $this->formatVersion($infos['version']);
+					$remote_version = $this->formatVersion($module->module_version);
+					if($remote_version > $local_version) {
+						$status .= "<br/> <span class='error'>new version available!</span><br/>installed version: " . $local_version;
+						$actions = "<a href='./download/?url={$module->download_url}&class={$module->class_name}'>update</a>";
+					}
+					if($remote_version == $local_version) {
+						$status .= "<br/> installed version: " . $local_version;
+						$actions = "<a href='{$this->pages->get(21)->url}edit?name={$module->class_name}'>edit</a>";
+					}
+				}
+			} else {
+				$remote_version = $this->formatVersion($module->module_version);
+				$actions = "<a href='./download/?url={$module->download_url}&class={$module->class_name}'>download</a>";
+			}
+
+			$moduletbl->row(array(
+							$module->title,
+							$module->class_name,
+							implode(", ", $categories),
+							implode(", ", $authors),
+							date("Y/m/d", $module->modified),
+							$module->release_state->title,
+							$remote_version,
+							$status,
+							$actions
+						));
+			$count++;
+		}
+
+		$out .= "<p>Modules found on modules.processwire.com (".$count.") </p>";
+		$out .= $moduletbl->render();
+
+		$form = $this->modules->get('InputfieldForm');
+		$form->attr('action', $this->pages->get(21)->url);
+		$form->attr('method', 'post');
+		$form->attr('id', 'modules_form');
+
+		$submit = $this->modules->get('InputfieldButton');
+		$submit->attr('href', './?reset=1');
+		$submit->attr('name', 'reset');
+		$submit->attr('value', $this->_('refresh'));
+		$form->add($submit);
+		$form->attr('value', $out);
+
+		return $form->render();
+	}
+
+
+	private function createCacheFile($cachefile) {
+		$contents = file_get_contents($this->modulelistURL);
+		if(!$handle = fopen($cachefile, "w")) throw new WireException("cannot create cachefile $cachefile");
+		if(!fwrite($handle, $contents)) throw new WireException("cannot write cachefile $cachefile");
+		fclose($handle);
+		return json_decode($contents);
+	}
+
+	private function readCacheFile($cachefile) {
+		if(!$handle = fopen($cachefile, "r")) throw new WireException("cannot open cachefile $cachefile");
+		if(!$contents = fread($handle, filesize($cachefile))) throw new WireException("cannot read cachefile $cachefile");
+		fclose($handle);
+		return json_decode($contents);
+	}
+
+	public function executeDownload() {
+
+		$this->modules->resetCache();
+
+		$url = $this->input->get->url;
+		$class_name = $this->input->get->class;
+
+		$tmp_zip = $this->config->paths->assets . $this->downloadFileName;
+		$tmp_dir = $this->config->paths->assets;
+
+		$success = false;
+
+		// download the zip file and save it in assets directory
+		if($file = $this->downloadFile($url, $tmp_zip)) {
+			$this->message("Downloaded .zip successfully from $url");
+			// if successfully downloaded ectract it
+			$zip = new ZipArchive;
+			if($zip->open($file) === true) {
+				for($i = 0; $i < $zip->numFiles; $i++) {
+					$zip->extractTo($tmp_dir, array($zip->getNameIndex($i)));
+				}
+				$extracted_dirname = trim($zip->getNameIndex(0),"/");
+				$zip->close();
+			} else {
+				throw new WireException("Could not open zip file");
+			}
+			// now create module directory and copy files over
+			$module_dir = $this->config->paths->siteModules . $class_name;
+			if($this->createModuleDirectory($module_dir)) {
+				if($this->recursiveCopy($tmp_dir . $extracted_dirname, $module_dir)) {
+					$this->message("Copied files successfully to module directory $module_dir");
+					$success = true;
+				}
+			} else {
+				$this->error("Could not create directory $module_dir");
+			}
+			chmod($tmp_zip, 0777);
+			chmod($tmp_dir . $extracted_dirname, 0777);
+			if(!unlink($tmp_zip)) throw new WireException("Could not delete downloaded zip file $tmp_zip");
+			if(!$this->removeDir($tmp_dir . $extracted_dirname)) throw new WireException("Could not delete downloaded temporary files {$tmp_dir}{$extracted_dirname}");
+		}
+
+		if($success) {
+
+			$this->modules->resetCache();
+
+			$text = "<p>" . $this->_('Module Downloaded and extracted sucessfully.') . "</p>";
+
+			$form = $this->modules->get('InputfieldForm');
+			$form->attr('action', $this->pages->get(21)->url );
+			$form->attr('method', 'post');
+			$form->attr('id', 'modules_form');
+
+			$field = "<input type='hidden' name='install' value='$class_name'/>";
+			$form->value .= $field;
+
+			$submit = $this->modules->get('InputfieldSubmit');
+			$submit->attr('name', 'submit');
+			$submit->attr('value', $this->_('install module'));
+			$form->add($submit);
+
+			return $text . $form->render();
+		} else {
+			return "<p>" . $this->_('There seems to be a problem with donwloading the module.') . "</p>";
+		}
+
+	}
+
+
+
+	public static $options = array(
+		CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows; U; Windows NT 5.1; pl; rv:1.9) Gecko/2008052906 Firefox/13.0',
+		CURLOPT_AUTOREFERER => true,
+		CURLOPT_COOKIEFILE => '',
+		CURLOPT_FOLLOWLOCATION => true
+	);
+
+	public static function downloadFile($url, $fileName) {
+
+		if (($curl = curl_init($url)) == false) {
+			$this->error("curl_init error for url $url.");
+			return false;
+		}
+
+		curl_setopt_array($curl, self::$options);
+
+		if (substr($fileName, -1) == '/') {
+			$targetDir = $fileName;
+			$fileName = tempnam(sys_get_temp_dir(), 'c_');
+		}
+		if (($fp = fopen($fileName, "wb")) === false) {
+			$this->error("fopen error for filename $fileName");
+			return false;
+		}
+
+		curl_setopt($curl, CURLOPT_FILE, $fp);
+		curl_setopt($curl, CURLOPT_BINARYTRANSFER, true);
+
+		if (curl_exec($curl) === false) {
+			fclose($fp);
+			unlink($fileName);
+			$this->error("curl_exec error for url $url.");
+			return false;
+		} elseif (isset($targetDir)) {
+			$eurl = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
+			preg_match('#^.*/(.+)$#', $eurl, $match);
+			fclose($fp);
+			rename($fileName, "$targetDir{$match[1]}");
+			$fileName = "$targetDir{$match[1]}";
+		} else {
+			fclose($fp);
+		}
+
+		curl_close($curl);
+		return $fileName;
+	}
+
+	private function recursiveCopy($dirsource, $dirdest){
+		// recursive function to copy
+		// all subdirectories and contents:
+		if(is_dir($dirsource)) $dir_handle = opendir($dirsource);
+		//$dirname = substr($dirsource,strrpos($dirsource,"/")+1);
+
+		//mkdir($dirdest."/".$dirname, 0750);
+		while($file = readdir($dir_handle)) {
+			if($file != "." && $file != "..") {
+				if(!is_dir($dirsource."/".$file)) copy ($dirsource."/".$file, $dirdest."/".$file);
+				else {
+					$dirdest1 = $dirdest."/".$dirname;
+					$this->recursiveCopy($dirsource."/".$file, $dirdest1);
+				}
+			}
+		}
+		closedir($dir_handle);
+		return true;
+	}
+
+	private function createModuleDirectory($dir){
+		if(!file_exists($dir)) {
+			if(!mkdir($dir, octdec($this->config->chmodDir))) {
+				$this->error("error creating module directory at: $dir");
+				return false;
+			} else {
+				return true;
+			}
+		} else {
+			return true;
+		}
+	}
+
+	private function removeDir($dir){
+		foreach(glob($dir . '/*') as $file) {
+			if(is_dir($file)) {
+				$this->removeDir($file);
+			} else{
+				if(!unlink($file)) throw new WireException("Could not remove file $file");
+			}
+		}
+		if(!rmdir($dir)) throw new WireException("Could not remove directory $dir");
+		return true;
+	}
+
+	public function install() {
+		// page already found for some reason
+		if(count($this->pages->find("name=".__CLASS__))) return;
+		$p = new Page();
+		$p->template = $this->templates->get("admin");
+		$p->title = __CLASS__;
+		$p->name = __CLASS__;
+		$p->parent = $this->pages->get(21);
+		$p->process = $this;
+		$p->save();
+	}
+
+	public function deinstall() {
+		$found = $this->pages->find("name=".__CLASS__)->first();
+		if(count($found)) $found->delete();
+	}
+
+	static public function getModuleConfigInputfields(array $data) {
+
+	}
+}
