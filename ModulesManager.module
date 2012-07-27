@@ -34,7 +34,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 004,
+			'version' => 005,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them',
 			'href' => '',
 			'singular' => true,
@@ -101,31 +101,29 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$categories = array();
 			foreach($module->categories as $cat) $categories[] = $cat->title;
 
+			// exclude language packs modules
+			if(in_array('Language Packs',$categories)) continue;
+			if(in_array('Admin Themes',$categories)) continue;
+
 			$authors = array();
 			foreach($module->authors as $auth) $authors[] = $auth->title;
 
 			$status = '<span>-</span>';
 			$version = '-';
 			$actions = '-';
-			$remote_version = $this->formatVersion($module->module_version);
 
-			// exclude language packs modules
-			if(in_array('Language Packs',$categories)) continue;
-			if(in_array('Admin Themes',$categories)) continue;
+			$remote_version = $this->formatVersion($module->module_version);
 
 			if(array_key_exists($module->class_name, $this->modulesArray)) {
 
+				// we can't use modules->get(modulename) as it would install the module already
+				$infos = wire("modules")->getModuleInfo($module->class_name);
+				$local_version = $this->formatVersion($infos['version']);
+
 				if($this->modulesArray[$module->class_name] == 0) {
-					$status = 'found';
-					$remote_version = $this->formatVersion($module->module_version);
+					$status = 'found: ' . $local_version;
 					$actions = "<button type='submit' id='install_$module->class_name' name='install' class='install' value='$module->class_name'>" . $this->_x('install', 'button') . "</button>";
 				} else {
-
-					$_modinstalled = wire("modules")->get($module->class_name);
-					$infos = $_modinstalled->getModuleInfo();
-					$local_version = $this->formatVersion($infos['version']);
-					$remote_version = $this->formatVersion($module->module_version);
-
 					if($remote_version > $local_version) {
 						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span><br/>';
 						$status .= "<span class='ui-state-update'>new version available!</span><br/>";
@@ -199,10 +197,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$url = $this->input->get->url;
 		$class_name = $this->input->get->class;
 
-		$tmp_zip = $this->config->paths->assets . $this->downloadFileName;
 		$tmp_dir = $this->config->paths->assets;
-
-		$success = false;
+		$tmp_zip = $tmp_dir . $this->downloadFileName;
 
 		if(!is_writable($this->config->paths->assets)) $this->error($this->_("Make sure assets directory is writeable for php."));
 		if(!is_writable($this->config->paths->siteModules)) $this->error($this->_("Make sure your site modules directory is writeable for php."));
