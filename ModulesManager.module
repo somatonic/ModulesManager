@@ -34,7 +34,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 003,
+			'version' => 004,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them',
 			'href' => '',
 			'singular' => true,
@@ -325,13 +325,13 @@ class ModulesManager extends Process implements ConfigurableModule {
 		if(is_dir($dirsource)) $dir_handle = opendir($dirsource);
 		$dirname = substr($dirsource,strrpos($dirsource,"/")+1);
 
-		wireMkdir($dirdest."/".$dirname);
+		wireMkdir($dirdest . "/" . $dirname);
 		while($file = readdir($dir_handle)) {
 			if($file != "." && $file != "..") {
-				if(!is_dir($dirsource."/".$file)) copy ($dirsource."/".$file, $dirdest."/". $dirname . "/" .$file);
+				if(!is_dir($dirsource . "/" . $file)) copy ($dirsource . "/" . $file, $dirdest . $dirname . "/" .$file);
 				else {
-					$dirdest1 = $dirdest."/".$dirname;
-					$this->recursiveCopy($dirsource."/".$file, $dirdest1);
+					$dirdest1 = $dirdest . $dirname . "/";
+					$this->recursiveCopy($dirsource . "/" . $file, $dirdest1);
 				}
 			}
 		}
