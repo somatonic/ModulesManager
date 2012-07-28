@@ -11,7 +11,10 @@
 	background-color: #eee;
 }
 
-
 a.icon:hover { background-color: #fff; }
 .ui-state-update { color: red; }
 .ui-state-installed { color: #4db101; }
+
+.mname:hover {
+	cursor: help;
+}

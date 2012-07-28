@@ -140,8 +140,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 			//$this->modules->isInstalled($class_name);
 
 			$moduletbl->row(array(
-				"<b>" . $module->title . "</b>",
-				"<a href='$module->url' target='_blank' class='icon' title='more infos'><span class='ui-icon ui-icon-info'></span></a>",
+				"<b class='mname' title='$module->summary'>" . $module->title . "</b>",
+				"<a href='{$module->url}' target='_blank' class='icon' title='more infos'><span class='ui-icon ui-icon-info hoverdescr' id='{$module->name}'></span></a>",
 				$module->release_state->title,
 				$remote_version,
 				$module->class_name,
@@ -267,6 +267,16 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 	}
 
+	// public function executeGet() {
+	// 	if($this->config->ajax && !$this->user->isGuest() && isset($this->input->get->mname)) {
+	// 			$url = $this->input->get->mname
+	// 				. "/?apikey="
+	// 				. $this->getConfig('apikey')
+	// 				. "&of=1";
+	// 			$result = file_get_contents($this->getConfig('remoteurl') . $url);
+	// 			return $result;
+	// 	}
+	// }
 
 	protected static $options = array(
 		CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows; U; Windows NT 5.1; pl; rv:1.9) Gecko/2008052906 Firefox/13.0',
