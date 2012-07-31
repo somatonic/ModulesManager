@@ -38,7 +38,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 007,
+			'version' => 010,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them',
 			'href' => '',
 			'singular' => true,
@@ -46,19 +46,41 @@ class ModulesManager extends Process implements ConfigurableModule {
 			);
 	}
 
+	/**
+	 * get the config either default or overwritten by user config
+	 * @param  string $key name of the option
+	 * @return mixed      return requested option value
+	 */
 	public function getConfig($key) {
 		return ($this->get($key)) ? $this->get($key) : self::$defaults[$key];
 	}
 
+	/**
+	 * this method is called when ProcessWire is read and loaded the module
+	 * used here to get scripts and css files loaded automaticly
+	 * @return module returns parent init
+	 */
 	public function init() {
 		return parent::init();
 	}
 
+	/**
+	 * used internally for the module to convert version numbers of the modules
+	 * @param  int $version version number | major minor revision
+	 * @return string          returns string formatted version number
+	 */
 	protected function formatVersion($version) {
 		return preg_replace('/(\d)(?=\d)/', '$1.', str_pad("$version", 3, "0", STR_PAD_LEFT));
 	}
 
 	public function execute() {
+
+		// check if we have the rights to download files from other domains
+		// using copy or file_get_contents
+		if(!ini_get("allow_url_fopen")) $this->error($this->_("The php config 'allow_url_fopen' is disabled on the server, modules can't be donwloaded through Modules Manages. Enable it or ask your hosting support then try again."));
+
+		if(!is_writable($this->config->paths->assets)) $this->error($this->_("Make sure your /site/assets directory is writeable by php."));
+		if(!is_writable($this->config->paths->siteModules)) $this->error($this->_("Make sure your /site/modules directory is writeable by php."));
 
 		$out = '';
 
@@ -325,50 +347,14 @@ class ModulesManager extends Process implements ConfigurableModule {
 	// 	}
 	// }
 
-	protected static $options = array(
-		CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows; U; Windows NT 5.1; pl; rv:1.9) Gecko/2008052906 Firefox/13.0',
-		CURLOPT_AUTOREFERER => true,
-		CURLOPT_COOKIEFILE => '',
-		CURLOPT_FOLLOWLOCATION => true
-	);
-
 	private function downloadFile($url, $fileName) {
 
-		if (($curl = curl_init($url)) == false) {
-			$this->error("curl_init error for url $url.");
+		if(!copy($url, $fileName)) {
+			$this->error("File could not be downloaded $url");
 			return false;
-		}
-
-		curl_setopt_array($curl, self::$options);
-
-		if (substr($fileName, -1) == '/') {
-			$targetDir = $fileName;
-			$fileName = tempnam(sys_get_temp_dir(), 'c_');
-		}
-		if (($fp = fopen($fileName, "wb")) === false) {
-			$this->error("fopen error for filename $fileName");
-			return false;
-		}
-
-		curl_setopt($curl, CURLOPT_FILE, $fp);
-		curl_setopt($curl, CURLOPT_BINARYTRANSFER, true);
-
-		if (curl_exec($curl) === false) {
-			fclose($fp);
-			unlink($fileName);
-			$this->error("curl_exec error for url $url.");
-			return false;
-		} elseif (isset($targetDir)) {
-			$eurl = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
-			preg_match('#^.*/(.+)$#', $eurl, $match);
-			fclose($fp);
-			rename($fileName, "$targetDir{$match[1]}");
-			$fileName = "$targetDir{$match[1]}";
 		} else {
-			fclose($fp);
+			return $fileName;
 		}
-
-		curl_close($curl);
 		return $fileName;
 	}
 
@@ -406,11 +392,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 	}
 
 	private function removeDir($dir){
-		foreach(glob($dir . '/*') as $file) {
-			if(is_dir($file)) {
-				$this->removeDir($file);
+		foreach(scandir($dir) as $file) {
+			if($file === '.' || $file === '..') continue;
+			if(is_dir($dir ."/". $file)) {
+				$this->removeDir($dir ."/". $file);
 			} else{
-				if(!unlink($file)) throw new WireException("Could not remove file $file");
+				if(!unlink($dir ."/". $file)) throw new WireException("Could not remove file $file");
 			}
 		}
 		if(!rmdir($dir)) throw new WireException("Could not remove directory $dir");
