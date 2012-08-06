@@ -38,7 +38,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 010,
+			'version' => 9,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them',
 			'href' => '',
 			'singular' => true,
@@ -327,36 +327,78 @@ class ModulesManager extends Process implements ConfigurableModule {
 				$this->fuel->set("processHeadline", "You just updated $class_name");
 				$text = "<p>" . $this->_("Module was updated sucessfully. Ready to check if everything still works! Or there's possibly new options.") . " Module: <a href='{$this->pages->get(21)->url}edit?name={$class_name}'>$class_name</a></p>";"";
 			}
-
 			return $text;
 
 		} else {
 			return "<p>" . $this->_('There seems to be a problem with downloading or writing the module.') . "</p>";
 		}
-
 	}
-
-	// public function executeGet() {
-	// 	if($this->config->ajax && !$this->user->isGuest() && isset($this->input->get->mname)) {
-	// 			$url = $this->input->get->mname
-	// 				. "/?apikey="
-	// 				. $this->getConfig('apikey')
-	// 				. "&of=1";
-	// 			$result = file_get_contents($this->getConfig('remoteurl') . $url);
-	// 			return $result;
-	// 	}
-	// }
 
 	private function downloadFile($url, $fileName) {
 
-		if(!copy($url, $fileName)) {
+		// Define the options
+		$options = array('max_redirects' => 2 );
+		$context = stream_context_create(array('http' => $options));
+		if(!$content = file_get_contents($url, $fileName, $context)) {
 			$this->error("File could not be downloaded $url");
 			return false;
 		} else {
-			return $fileName;
+			if(($fp = fopen($fileName, "wb")) === false) {
+				$this->error("fopen error for filename $fileName");
+				return false;
+			} else {
+				fwrite($fp, $content);
+				fclose($fp);
+				return $fileName;
+			}
 		}
 		return $fileName;
 	}
+
+	// protected static $options = array(
+	// 	CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows; U; Windows NT 5.1; pl; rv:1.9) Gecko/2008052906 Firefox/13.0',
+	// 	CURLOPT_AUTOREFERER => true,
+	// 	CURLOPT_COOKIEFILE => '',
+	// 	CURLOPT_FOLLOWLOCATION => true
+	// );
+
+	// private function downloadFileCurl($url, $fileName) {
+	// 	if (($curl = curl_init($url)) == false) {
+	// 		$this->error("curl_init error for url $url.");
+	// 		$this->error("File could not be downloaded $url");
+	// 		return false;
+	// 	}
+	// 	curl_setopt_array($curl, self::$options);
+	// 	if (substr($fileName, -1) == '/') {
+	// 		$targetDir = $fileName;
+	// 		$fileName = tempnam(sys_get_temp_dir(), 'c_');
+	// 	}
+	// 	if (($fp = fopen($fileName, "wb")) === false) {
+	// 		$this->error("fopen error for filename $fileName");
+	// 		return false;
+	// 	}
+
+	// 	curl_setopt($curl, CURLOPT_FILE, $fp);
+	// 	curl_setopt($curl, CURLOPT_BINARYTRANSFER, true);
+
+	// 	if (curl_exec($curl) === false) {
+	// 		fclose($fp);
+	// 		unlink($fileName);
+	// 		$this->error("curl_exec error for url $url.");
+	// 		return false;
+	// 	} elseif (isset($targetDir)) {
+	// 		$eurl = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
+	// 		preg_match('#^.*/(.+)$#', $eurl, $match);
+	// 		fclose($fp);
+	// 		rename($fileName, "$targetDir{$match[1]}");
+	// 		$fileName = "$targetDir{$match[1]}";
+	// 	} else {
+	// 		fclose($fp);
+	// 		return $fileName;
+	// 	}
+	// 	curl_close($curl);
+	// 	return $fileName;
+	// }
 
 	private function recursiveCopy($dirsource, $dirdest){
 		// recursive function to copy
