@@ -38,7 +38,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 010,
+			'version' => 100,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them',
 			'href' => '',
 			'singular' => true,
@@ -73,58 +73,84 @@ class ModulesManager extends Process implements ConfigurableModule {
 		return preg_replace('/(\d)(?=\d)/', '$1.', str_pad("$version", 3, "0", STR_PAD_LEFT));
 	}
 
+	/**
+	 * Default process function when the page is loaded without segments
+	 *
+	 * @return string output html string
+	 */
 	public function execute() {
-
 		// check if we have the rights to download files from other domains
 		// using copy or file_get_contents
-		if(!ini_get("allow_url_fopen")) $this->error($this->_("The php config 'allow_url_fopen' is disabled on the server, modules can't be donwloaded through Modules Manages. Enable it or ask your hosting support then try again."));
+		if(!ini_get("allow_url_fopen")) {
+			$this->error($this->_("The php config 'allow_url_fopen' is disabled on the server, modules can't be donwloaded through Modules Manages. Enable it or ask your hosting support then try again."));
+		}
 
-		if(!is_writable($this->config->paths->assets)) $this->error($this->_("Make sure your /site/assets directory is writeable by php."));
-		if(!is_writable($this->config->paths->siteModules)) $this->error($this->_("Make sure your /site/modules directory is writeable by php."));
+		// check if directories are writeable
+		if(!is_writable($this->config->paths->assets)) {
+			$this->error($this->_("Make sure your /site/assets directory is writeable by php."));
+		}
+		if(!is_writable($this->config->paths->siteModules)) {
+			$this->error($this->_("Make sure your /site/modules directory is writeable by php."));
+		}
 
-		$out = '';
-
+		// construct the cache file path for json feed
 		$cachefile = $this->config->paths->cache . $this->cacheFile;
 
-		// reset cache to scan for new modules downloaded
+		// reset cache to scan for new modules downloaded, manually
+		// put into site modules folder and donwload current json feed
 		if($this->input->get->reset) {
+			// reset PW modules cache
 			$this->modules->resetCache();
+			// json feed download and cache
 			$this->createCacheFile($cachefile);
+			// reload page without params
 			$this->session->redirect("./");
 		}
-		// get json module feed
 
+		// get json module feed cache file,
+		// if not yet cached download and cache it
 		if(file_exists($cachefile)){
 			$this->modulesRemoteArray = $this->readCacheFile($cachefile);
 		} else {
 			$this->modulesRemoteArray = $this->createCacheFile($cachefile);
 		}
 
-		foreach($this->modules as $module) $this->modulesArray[$module->className()] = 1;
-		foreach($this->modules->getInstallable() as $module) $this->modulesArray[basename($module, '.module')] = 0;
+		// get current installed modules in PW and store it in array
+		// for later use to generate
+		foreach($this->modules as $module) {
+			$this->modulesArray[$module->className()] = 1;
+		}
+		// get current uninstalled modules with flag 0
+		foreach($this->modules->getInstallable() as $module) {
+			$this->modulesArray[basename($module, '.module')] = 0;
+		}
 
+		$out = '';
+
+		// start output of module list
 		$moduletbl = wire('modules')->get('MarkupAdminDataTable');
 		$moduletbl->setEncodeEntities(false);
 		$header = array(
-						$this->_("name"),
-						$this->_("infos"),
-						$this->_("release"),
-						$this->_("version"),
-						$this->_("class name"),
-						$this->_("categories"),
-						$this->_("author(s)"),
-						$this->_("modified"),
-						$this->_("status"),
-						$this->_("action")
-					);
+			$this->_("name"),
+			$this->_("infos"),
+			$this->_("release"),
+			$this->_("version"),
+			$this->_("class name"),
+			$this->_("categories"),
+			$this->_("author(s)"),
+			$this->_("modified"),
+			$this->_("status"),
+			$this->_("action")
+		);
 
 		$moduletbl->headerRow($header);
 
 		$count = 0;
 		$all_categories = array();
 
+		// loop the module list we got from the json feed and we do
+		// various checks here to see if it's uptodate or installed
 		foreach($this->modulesRemoteArray->items as $key => $module) {
-
 
 			$categories = array();
 
@@ -165,8 +191,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$remote_version = $this->formatVersion($module->module_version);
 
 			if(array_key_exists($module->class_name, $this->modulesArray)) {
-
-				// we can't use modules->get(modulename) as it would install the module already
+				// get module infos, we can't use modules->get(modulename) here
+				// as it would install the module, which we don't want at all
 				$infos = wire("modules")->getModuleInfo($module->class_name);
 				$local_version = $this->formatVersion($infos['version']);
 
@@ -211,6 +237,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$form->attr('method', 'post');
 		$form->attr('id', 'modules_form');
 
+		// refresh button
 		$submit = $this->modules->get('InputfieldButton');
 		$submit->attr('href', './?reset=1');
 		$submit->attr('name', 'reset');
@@ -218,6 +245,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$form->add($submit);
 
 		$out .= $moduletbl->render();
+		// add table and button to form field wrapper
 		$form->attr('value', $out);
 
 		// category select filter
@@ -226,6 +254,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$catsform->attr('method', 'get');
 		$catsform->attr('id', 'modules_filter_form');
 
+		// category select
 		$cats = $this->modules->get("InputfieldSelect");
 		$cats->attr('id+name', 'cat');
 		$cats->label = 'Filter categories';
@@ -327,36 +356,78 @@ class ModulesManager extends Process implements ConfigurableModule {
 				$this->fuel->set("processHeadline", "You just updated $class_name");
 				$text = "<p>" . $this->_("Module was updated sucessfully. Ready to check if everything still works! Or there's possibly new options.") . " Module: <a href='{$this->pages->get(21)->url}edit?name={$class_name}'>$class_name</a></p>";"";
 			}
-
 			return $text;
 
 		} else {
 			return "<p>" . $this->_('There seems to be a problem with downloading or writing the module.') . "</p>";
 		}
-
 	}
-
-	// public function executeGet() {
-	// 	if($this->config->ajax && !$this->user->isGuest() && isset($this->input->get->mname)) {
-	// 			$url = $this->input->get->mname
-	// 				. "/?apikey="
-	// 				. $this->getConfig('apikey')
-	// 				. "&of=1";
-	// 			$result = file_get_contents($this->getConfig('remoteurl') . $url);
-	// 			return $result;
-	// 	}
-	// }
 
 	private function downloadFile($url, $fileName) {
 
-		if(!copy($url, $fileName)) {
+		// Define the options
+		$options = array('max_redirects' => 2 );
+		$context = stream_context_create(array('http' => $options));
+		if(!$content = file_get_contents($url, $fileName, $context)) {
 			$this->error("File could not be downloaded $url");
 			return false;
 		} else {
-			return $fileName;
+			if(($fp = fopen($fileName, "wb")) === false) {
+				$this->error("fopen error for filename $fileName");
+				return false;
+			} else {
+				fwrite($fp, $content);
+				fclose($fp);
+				return $fileName;
+			}
 		}
 		return $fileName;
 	}
+
+	// protected static $options = array(
+	// 	CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows; U; Windows NT 5.1; pl; rv:1.9) Gecko/2008052906 Firefox/13.0',
+	// 	CURLOPT_AUTOREFERER => true,
+	// 	CURLOPT_COOKIEFILE => '',
+	// 	CURLOPT_FOLLOWLOCATION => true
+	// );
+
+	// private function downloadFileCurl($url, $fileName) {
+	// 	if (($curl = curl_init($url)) == false) {
+	// 		$this->error("curl_init error for url $url.");
+	// 		$this->error("File could not be downloaded $url");
+	// 		return false;
+	// 	}
+	// 	curl_setopt_array($curl, self::$options);
+	// 	if (substr($fileName, -1) == '/') {
+	// 		$targetDir = $fileName;
+	// 		$fileName = tempnam(sys_get_temp_dir(), 'c_');
+	// 	}
+	// 	if (($fp = fopen($fileName, "wb")) === false) {
+	// 		$this->error("fopen error for filename $fileName");
+	// 		return false;
+	// 	}
+
+	// 	curl_setopt($curl, CURLOPT_FILE, $fp);
+	// 	curl_setopt($curl, CURLOPT_BINARYTRANSFER, true);
+
+	// 	if (curl_exec($curl) === false) {
+	// 		fclose($fp);
+	// 		unlink($fileName);
+	// 		$this->error("curl_exec error for url $url.");
+	// 		return false;
+	// 	} elseif (isset($targetDir)) {
+	// 		$eurl = curl_getinfo($curl, CURLINFO_EFFECTIVE_URL);
+	// 		preg_match('#^.*/(.+)$#', $eurl, $match);
+	// 		fclose($fp);
+	// 		rename($fileName, "$targetDir{$match[1]}");
+	// 		$fileName = "$targetDir{$match[1]}";
+	// 	} else {
+	// 		fclose($fp);
+	// 		return $fileName;
+	// 	}
+	// 	curl_close($curl);
+	// 	return $fileName;
+	// }
 
 	private function recursiveCopy($dirsource, $dirdest){
 		// recursive function to copy
