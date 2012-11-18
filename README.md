@@ -1,4 +1,4 @@
-# Modules Manager alpha 1.0.0 for ProcessWire2.+
+# Modules Manager alpha 1.0.1 for ProcessWire2.+
 
 Module Manager enables you to browse the modules directory on modules.processwire.com, download, install or update them.
 

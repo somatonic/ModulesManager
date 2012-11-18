@@ -16,10 +16,10 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 	protected static $defaults = array(
 			'apikey' => "pw223",
-			'remoteurl' => "http://modules.processwire.com/export-json/"
+			'remoteurl' => "http://modules.processwire.com/export-json/",
+			'limit' => 200
 		);
 
-	protected static $limit = '100';
 	protected $exclude_categories = array(
 		'language-pack' => 'Language Packs',
 		'admin-theme' => 'Admin Themes'
@@ -38,7 +38,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 100,
+			'version' => 101,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them',
 			'href' => '',
 			'singular' => true,
@@ -242,6 +242,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$submit->attr('href', './?reset=1');
 		$submit->attr('name', 'reset');
 		$submit->attr('value', $this->_('refresh'));
+		$submit->attr('class', $submit->attr('class') . ' head_button_clone');
 		$form->add($submit);
 
 		$out .= $moduletbl->render();
@@ -272,7 +273,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 
 	private function createCacheFile($cachefile) {
-		$contents = file_get_contents($this->getConfig('remoteurl') . "?apikey=" . $this->getConfig("apikey") . "&limit=" . self::$limit);
+		$contents = file_get_contents($this->getConfig('remoteurl') . "?apikey=" . $this->getConfig("apikey") . "&limit=" . $this->getConfig("limit"));
 		if(!$handle = fopen($cachefile, "w")) throw new WireException("cannot create cachefile $cachefile");
 		if(!fwrite($handle, $contents)) throw new WireException("cannot write cachefile $cachefile");
 		fclose($handle);
@@ -508,6 +509,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$field->attr('name', 'apikey');
 		$field->attr('size', 10);
 		$field->attr('value', $data['apikey']);
+		// $field->set("collapsed",Inputfield::collapsedHidden);
 		$field->label = "modules.processwire.com APIkey";
 		$fields->append($field);
 
@@ -516,6 +518,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$field->attr('size', 0);
 		$field->attr('value', $data['remoteurl']);
 		$field->label = "URL to webservice";
+		$fields->append($field);
+
+		$field = $modules->get("InputfieldInteger");
+		$field->attr('name', 'limit');
+		$field->attr('value', $data['limit']);
+		$field->label = "Limit";
 		$fields->append($field);
 
 		return $fields;
