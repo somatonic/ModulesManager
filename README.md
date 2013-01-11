@@ -1,4 +1,4 @@
-# Modules Manager alpha 1.0.1 for ProcessWire2.+
+# Modules Manager alpha 1.0.2 for ProcessWire2.+
 
 Module Manager enables you to browse the modules directory on modules.processwire.com, download, install or update them.
 
@@ -14,4 +14,4 @@ If you update a module it will do the same process as above, and just replace th
 #### Notes
 This version is still alpha and in testing. Feel free to try it out own your own risk. Current version uses file_get_contents" and "copy" php methods to retrieve the json feed from external domain. This requires the php to allow it in php (allow_url_fopen). Download of the module zip is done using copy(). Also on my local install I had to adjust the /site/modules/ and /site/assets/ directory to have write permission by php.
 
-Currently it does hide modules for Language Packs, and Admin Themes, since those would require a complete different install routine. Although it should be simple for admin themes to get it to work, but I first have to make sure regular modules work.
+Currently it does hide modules for Language Packs, since those would require a complete different install routine.
