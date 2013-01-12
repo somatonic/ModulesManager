@@ -21,9 +21,10 @@ class ModulesManager extends Process implements ConfigurableModule {
 		);
 
 	protected $exclude_categories = array(
-		'language-pack' => 'Language Packs'
-		//'admin-theme' => 'Admin Themes'
+		'language-pack' => 'Language Packs',
+		'site-profile' => 'Site Profiles'
 		);
+
 	protected $modulesArray = array();
 	protected $modulesRemoteArray = array();
 	protected $cacheFile = "ModuleManager.cache";
@@ -38,7 +39,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 102,
+			'version' => 103,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them',
 			'href' => '',
 			'singular' => true,
@@ -158,11 +159,13 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$all_categories = array_merge($all_categories, $categories);
 
 			// exclude modules
-			$hide = false;
+			$uninstallable = false;
+			$filterout = false;
+
 			// filter out unwanted categories
 			foreach($this->exclude_categories as $key => $exc) {
 				if(array_key_exists($key,$categories)){
-					$hide = true;
+					$uninstallable = true;
 					break;
 				}
 			}
@@ -171,13 +174,15 @@ class ModulesManager extends Process implements ConfigurableModule {
 				$selected_cat = wire('input')->get->cat;
 				if($selected_cat){
 					if(!array_key_exists(wire('input')->get->cat, $categories)) {
-						$hide = true;
+						$filterout = true;
 					}
 				}
 			}
 
 			// if filtered out no need to go any further in the loop
-			if($hide) continue;
+			if($filterout) continue;
+			// lets add a link to the modules.processwire.com instead
+
 			$count++;
 
 
@@ -203,7 +208,13 @@ class ModulesManager extends Process implements ConfigurableModule {
 					if($remote_version > $local_version) {
 						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span><br/>';
 						$status .= "<span class='ui-state-update'>new version available!</span><br/>";
-						$actions = "<a href='./download/?url={$module->download_url}&class={$module->class_name}'>update</a>";
+						if($module->download_url) {
+							$actions = "<a href='./download/?url={$module->download_url}&class={$module->class_name}'>update</a>";
+						} else if($uninstallable) {
+							$actions = "<a href='{$module->url}' target='_blank' title='Uninstallable with Modules Manager'>more</a>";
+						} else {
+							$actions = "<a href='{$module->url}' target='_blank' title='No github download URL found'>more</a>";
+						}
 					} else{
 						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span>';
 						$actions = "<a href='{$this->pages->get(21)->url}edit?name={$module->class_name}'>edit</a>";
@@ -217,7 +228,15 @@ class ModulesManager extends Process implements ConfigurableModule {
 				} else {
 					$confirm =  "";
 				}
-				$actions = "<a href='./download/?url={$module->download_url}&class={$module->class_name}$theme'$confirm>download</a>";
+
+				if($module->download_url) {
+					$actions = "<a href='./download/?url={$module->download_url}&class={$module->class_name}$theme'$confirm title='Download and install'>download</a>";
+				} else {
+					$actions = "<a href='{$module->url}' target='_blank' title='No github download URL found'>more</a>";
+				}
+				if($uninstallable) {
+					$actions = "<a href='{$module->url}' target='_blank' title='Uninstallable with Modules Manager'>more</a>";
+				}
 			}
 
 			//$this->modules->isInstalled($class_name);
@@ -267,7 +286,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$cats->attr('id+name', 'cat');
 		$cats->label = 'Filter categories';
 		$all_categories = array_merge($all_categories, array('' => ''));
-		$all_categories = array_diff($all_categories, $this->exclude_categories);
+		//$all_categories = array_diff($all_categories, $this->exclude_categories);
 		ksort($all_categories);
 		$cats->addOptions($all_categories);
 		$cats->value = wire('input')->get->cat; // selected the current requested GET
