@@ -210,10 +210,11 @@ class ModulesManager extends Process implements ConfigurableModule {
 						$status .= "<span class='ui-state-update'>new version available!</span><br/>";
 						if($module->download_url) {
 							$actions = "<a href='./download/?url={$module->download_url}&class={$module->class_name}'>update</a>";
-						} else if($uninstallable) {
-							$actions = "<a href='{$module->url}' target='_blank' title='Uninstallable with Modules Manager'>more</a>";
 						} else {
 							$actions = "<a href='{$module->url}' target='_blank' title='No github download URL found'>more</a>";
+						}
+						if($uninstallable) {
+							$actions = "<a href='{$module->url}' target='_blank' title='Uninstallable with Modules Manager'>more</a>";
 						}
 					} else{
 						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span>';
