@@ -1,7 +1,8 @@
 <?php
 
 /**
- * ProcessWire Modules Manager
+ * ProcessWire Modules Manager (Proof of concept)
+ * created 2012 by Soma
  *
  * ProcessWire 2.x
  * Copyright (C) 2010 by Ryan Cramer
@@ -17,7 +18,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 	protected static $defaults = array(
 			'apikey' => "pw223",
 			'remoteurl' => "http://modules.processwire.com/export-json/",
-			'limit' => 200
+			'limit' => 200,
+			'max_redirects' => 3
 		);
 
 	protected $exclude_categories = array(
@@ -39,11 +41,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 104,
-			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them',
+			'version' => 105,
+			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => '',
 			'singular' => true,
-			'autoload' => false
+			'autoload' => false,
+			'permission' => 'page-edit'
 			);
 	}
 
@@ -432,7 +435,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	private function downloadFile($url, $fileName) {
 
 		// Define the options
-		$options = array('max_redirects' => 2 );
+		$options = array('max_redirects' => $this->getConfig("max_redirects") );
 		$context = stream_context_create(array('http' => $options));
 
 		// download the zip
@@ -546,6 +549,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$field->attr('name', 'limit');
 		$field->attr('value', $data['limit']);
 		$field->label = "Limit";
+		$fields->append($field);
+
+		$field = $modules->get("InputfieldInteger");
+		$field->attr('name', 'max_redirects');
+		$field->attr('value', $data['max_redirects']);
+		$field->label = "Max Redirects for file_get_contents stream context (in case)";
 		$fields->append($field);
 
 		return $fields;
