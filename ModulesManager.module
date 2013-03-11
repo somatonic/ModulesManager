@@ -41,12 +41,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 105,
+			'version' => 106,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => '',
 			'singular' => true,
 			'autoload' => false,
-			'permission' => 'page-edit'
+			'permission' => 'modules-manager'
 			);
 	}
 
@@ -300,7 +300,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 		$pretext = "<p>Modules found on modules.processwire.com (".$count.") </p>";
 		//$pretext .= "ProcessWire Version " . $this->config->version;
-		return $pretext . $catsform->render() . $form->render();
+		$info = $this->getModuleInfo();
+		return $pretext . $catsform->render() . $form->render() .  "<p>Modules Manager v{$info['version']}</p>";
 	}
 
 
