@@ -61,7 +61,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 	/**
 	 * this method is called when ProcessWire is read and loaded the module
-	 * used here to get scripts and css files loaded automaticly
+	 * used here to get scripts and css files loaded automatically
 	 * @return module returns parent init
 	 */
 	public function init() {
@@ -338,7 +338,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		// download the zip file and save it in assets directory
 		if($file = $this->downloadFile($url, $tmp_zip)) {
 			$this->message("Downloaded .zip successfully from $url");
-			// if successfully downloaded ectract it
+			// if successfully downloaded extract it
 			$zip = new ZipArchive;
 			if($zip->open($file) === true) {
 				for($i = 0; $i < $zip->numFiles; $i++) {
@@ -388,15 +388,15 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 		}
 
-		// downloading and extracting is succesful
-		// lets show some install informations
+		// downloading and extracting is successful
+		// lets show some install information
 		if($success) {
 
 			// reset modules cache, so we can install the module and PW knows about it
 			$this->modules->resetCache();
 
 			if($this->input->get("theme")){
-				$str = sprintf($this->_("Admin theme '%s' downloaded and extracted sucessfully. If it worked you should see the new theme already. If not you may clear your cache or refresh the page."),$class_name);
+				$str = sprintf($this->_("Admin theme '%s' downloaded and extracted successfully. If it worked you should see the new theme already. If not you may clear your cache or refresh the page."),$class_name);
 				$text = "<p>" . $str  . "</p>";
 				return $text;
 			}
@@ -404,7 +404,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 			if(!$this->modules->isInstalled($class_name)) {
 				$this->fuel->set("processHeadline", "You just downloaded $class_name");
 
-				$str = sprintf($this->_("Module '%s' downloaded and extracted sucessfully. You can install it directly from here or any time later on the Modules admin page."),$class_name);
+				$str = sprintf($this->_("Module '%s' downloaded and extracted successfully. You can install it directly from here or any time later on the Modules admin page."),$class_name);
 				$text = "<p>" . $str . "</p>";
 
 				$form = $this->modules->get('InputfieldForm');
@@ -423,7 +423,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 			} else {
 				$this->fuel->set("processHeadline", "You just updated $class_name");
-				$str = sprintf($this->_("Module '%s' was updated sucessfully. Ready to check if everything still works! Or there's possibly new options."),$class_name);
+				$str = sprintf($this->_("Module '%s' was updated successfully. Ready to check if everything still works! Or there's possibly new options."),$class_name);
 				$text = "<p>" . $str . " Module: <a href='{$this->pages->get(21)->url}edit?name={$class_name}'>$class_name</a></p>";"";
 			}
 			return $text;
