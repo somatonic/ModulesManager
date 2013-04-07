@@ -225,12 +225,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 					}
 				}
 			} else {
-				$theme = isset($categories['admin-theme']) ? "&theme=1" : '' ;
+				$theme = isset($categories['admin-theme']) ? '&theme=1' : '' ;
 				if($theme) {
 					$install_text = $this->_('This will install the theme and delete the previous! If you have altered the /site/templates-admin/ theme or have your own, you might consider backing it up first.');
 					$confirm =  'onclick="return confirm(\''.$install_text.'\')"';
 				} else {
-					$confirm =  "";
+					$confirm =  '';
 				}
 
 				if($module->download_url) {
@@ -281,12 +281,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 		// category select filter
 		$categories_form = $this->modules->get('InputfieldForm');
-		$categories_form->attr('action', "./");
+		$categories_form->attr('action', './');
 		$categories_form->attr('method', 'get');
 		$categories_form->attr('id', 'modules_filter_form');
 
 		// category select
-		$cats = $this->modules->get("InputfieldSelect");
+		$cats = $this->modules->get('InputfieldSelect');
 		$cats->attr('id+name', 'cat');
 		$cats->label = 'Filter categories';
 		$all_categories = array_merge($all_categories, array('' => ''));
@@ -367,7 +367,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 					}
 				}
 			} else {
-				$from = $tmp_dir . $extracted_directory_name . "/";
+				$from = $tmp_dir . $extracted_directory_name . '/';
 				$destination_directory = $this->config->paths->siteModules . $class_name;
 			}
 			if($this->createDirectory($destination_directory)) {
@@ -443,7 +443,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$this->error('File could not be downloaded '.$url);
 			return false;
 		} else {
-			if(($fp = fopen($fileName, "wb")) === false) {
+			if(($fp = fopen($fileName, 'wb')) === false) {
 				$this->error('fopen error for filename '.$fileName);
 				return false;
 			} else {
@@ -531,7 +531,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$field->attr('name', 'apikey');
 		$field->attr('size', 10);
 		$field->attr('value', $data['apikey']);
-		// $field->set("collapsed",Inputfield::collapsedHidden);
+		// $field->set('collapsed',Inputfield::collapsedHidden);
 		$field->label = 'modules.processwire.com APIkey';
 		$fields->append($field);
 
