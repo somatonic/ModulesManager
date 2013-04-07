@@ -475,17 +475,14 @@ class ModulesManager extends Process implements ConfigurableModule {
 		return true;
 	}
 
-	private function createDirectory($dir){
-		if(!file_exists($dir)) {
-			if(!wireMkdir($dir)) {
-				$this->error("error creating module directory at: $dir");
+	private function createDirectory($directory){
+		if(!file_exists($directory)) {
+			if(!wireMkdir($directory)) {
+				$this->error("error creating module directory at: $directory");
 				return false;
-			} else {
-				return true;
 			}
-		} else {
-			return true;
 		}
+		return true;
 	}
 
 	private function removeDir($dir){
