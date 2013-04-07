@@ -16,8 +16,8 @@
 class ModulesManager extends Process implements ConfigurableModule {
 
 	protected static $defaults = array(
-			'apikey' => "pw223",
-			'remoteurl' => "http://modules.processwire.com/export-json/",
+			'apikey' => 'pw223',
+			'remoteurl' => 'http://modules.processwire.com/export-json/',
 			'limit' => 200,
 			'max_redirects' => 3
 		);
@@ -29,8 +29,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 	protected $modulesArray = array();
 	protected $modulesRemoteArray = array();
-	protected $cacheFile = "ModuleManager.cache";
-	protected $downloadFileName = "ModuleManagerDownload.zip";
+	protected $cacheFile = 'ModuleManager.cache';
+	protected $downloadFileName = 'ModuleManagerDownload.zip';
 
 	/**
 	 * getModuleInfo is a module required by all modules to tell ProcessWire about them
@@ -73,7 +73,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	 * @return string          returns string formatted version number
 	 */
 	protected function formatVersion($version) {
-		return preg_replace('/(\d)(?=\d)/', '$1.', str_pad("$version", 3, "0", STR_PAD_LEFT));
+		return preg_replace('/(\d)(?=\d)/', '$1.', str_pad( (string)$version, 3, '0', STR_PAD_LEFT));
 	}
 
 	/**
@@ -84,39 +84,39 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public function execute() {
 		// check if we have the rights to download files from other domains
 		// using copy or file_get_contents
-		if(!ini_get("allow_url_fopen")) {
-			$this->error($this->_("The php config 'allow_url_fopen' is disabled on the server, modules can't be donwloaded through Modules Manages. Enable it or ask your hosting support then try again."));
+		if(!ini_get('allow_url_fopen')) {
+			$this->error($this->_('The php config `allow_url_fopen` is disabled on the server, modules cannot be downloaded through Modules Manages. Enable it or ask your hosting support then try again.'));
 		}
 
 		// check if directories are writeable
 		if(!is_writable($this->config->paths->assets)) {
-			$this->error($this->_("Make sure your /site/assets directory is writeable by php."));
+			$this->error($this->_('Make sure your /site/assets directory is writeable by PHP.'));
 		}
 		if(!is_writable($this->config->paths->siteModules)) {
-			$this->error($this->_("Make sure your /site/modules directory is writeable by php."));
+			$this->error($this->_('Make sure your /site/modules directory is writeable by PHP.'));
 		}
 
 
 		// construct the cache file path for json feed
-		$cachefile = $this->config->paths->cache . $this->cacheFile;
+		$cache_file = $this->config->paths->cache . $this->cacheFile;
 
 		// reset cache to scan for new modules downloaded, manually
-		// put into site modules folder and donwload current json feed
+		// put into site modules folder and download current JSON feed
 		if($this->input->get->reset) {
 			// reset PW modules cache
 			$this->modules->resetCache();
 			// json feed download and cache
-			$this->createCacheFile($cachefile);
+			$this->createCacheFile($cache_file);
 			// reload page without params
-			$this->session->redirect("./");
+			$this->session->redirect('./');
 		}
 
 		// get json module feed cache file,
 		// if not yet cached download and cache it
-		if(file_exists($cachefile)){
-			$this->modulesRemoteArray = $this->readCacheFile($cachefile);
+		if(file_exists($cache_file)){
+			$this->modulesRemoteArray = $this->readCacheFile($cache_file);
 		} else {
-			$this->modulesRemoteArray = $this->createCacheFile($cachefile);
+			$this->modulesRemoteArray = $this->createCacheFile($cache_file);
 		}
 
 		// get current installed modules in PW and store it in array
@@ -132,28 +132,28 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$out = '';
 
 		// start output of module list
-		$moduletbl = wire('modules')->get('MarkupAdminDataTable');
-		$moduletbl->setEncodeEntities(false);
+		$module_table = wire('modules')->get('MarkupAdminDataTable');
+		$module_table->setEncodeEntities(false);
 		$header = array(
-			$this->_("name"),
-			$this->_("infos"),
-			$this->_("release"),
-			$this->_("version"),
-			$this->_("class name"),
-			$this->_("categories"),
-			$this->_("author(s)"),
-			$this->_("modified"),
-			$this->_("status"),
-			$this->_("action")
+			$this->_('name'),
+			$this->_('infos'),
+			$this->_('release'),
+			$this->_('version'),
+			$this->_('class name'),
+			$this->_('categories'),
+			$this->_('author(s)'),
+			$this->_('modified'),
+			$this->_('status'),
+			$this->_('action')
 		);
 
-		$moduletbl->headerRow($header);
+		$module_table->headerRow($header);
 
 		$count = 0;
 		$all_categories = array();
 
 		// loop the module list we got from the json feed and we do
-		// various checks here to see if it's uptodate or installed
+		// various checks here to see if it's up to date or installed
 		foreach($this->modulesRemoteArray->items as $key => $module) {
 
 			$categories = array();
@@ -199,61 +199,61 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$remote_version = $this->formatVersion($module->module_version);
 
 			if(array_key_exists($module->class_name, $this->modulesArray)) {
-				// get module infos, we can't use modules->get(modulename) here
+				// get module infos, we can't use modules->get(module_name) here
 				// as it would install the module, which we don't want at all
-				$infos = wire("modules")->getModuleInfo($module->class_name);
-				$local_version = $this->formatVersion($infos['version']);
+				$information = wire('modules')->getModuleInfo($module->class_name);
+				$local_version = $this->formatVersion($information['version']);
 
 				if($this->modulesArray[$module->class_name] == 0) {
 					$status = 'found: ' . $local_version;
-					$actions = "<button type='submit' id='install_$module->class_name' name='install' class='install' value='$module->class_name'>" . $this->_x('install', 'button') . "</button>";
+					$actions = '<button type="submit" id="install_'.$module->class_name.'" name="install" class="install" value="'.$module->class_name.'">' . $this->_x('install', 'button') . '</button>';
 				} else {
 					if($remote_version > $local_version) {
 						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span><br/>';
-						$status .= "<span class='ui-state-update'>new version available!</span><br/>";
+						$status .= '<span class="ui-state-update">new version available!</span><br/>';
 						if($module->download_url) {
-							$actions = "<a href='./download/?url={$module->download_url}&class={$module->class_name}'>update</a>";
+							$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.'">update</a>';
 						} else {
-							$actions = "<a href='{$module->url}' target='_blank' title='No github download URL found'>more</a>";
+							$actions = '<a href="'.$module->url.'" target="_blank" title="No github download URL found">more</a>';
 						}
 						if($uninstallable) {
-							$actions = "<a href='{$module->url}' target='_blank' title='Uninstallable with Modules Manager'>more</a>";
+							$actions = '<a href="'.$module->url.'" target="_blank" title="Uninstallable with Modules Manager">more</a>';
 						}
 					} else{
 						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span>';
-						$actions = "<a href='{$this->pages->get(21)->url}edit?name={$module->class_name}'>edit</a>";
+						$actions = '<a href="'.$this->pages->get(21)->url.'edit?name='.$module->class_name.'">edit</a>';
 					}
 				}
 			} else {
 				$theme = isset($categories['admin-theme']) ? "&theme=1" : '' ;
 				if($theme) {
-					$install_text = $this->_("This will install the theme and delete the previous! If you have altered the /site/templates-admin/ theme or have your own, you might consider backing it up first.");
-					$confirm =  "onclick='return confirm(\"$install_text\")'";
+					$install_text = $this->_('This will install the theme and delete the previous! If you have altered the /site/templates-admin/ theme or have your own, you might consider backing it up first.');
+					$confirm =  'onclick="return confirm(\''.$install_text.'\')"';
 				} else {
 					$confirm =  "";
 				}
 
 				if($module->download_url) {
-					$actions = "<a href='./download/?url={$module->download_url}&class={$module->class_name}$theme'$confirm title='Download and install'>download</a>";
+					$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.$theme.'"'.$confirm.' title="Download and install">download</a>';
 				} else {
-					$actions = "<a href='{$module->url}' target='_blank' title='No github download URL found'>more</a>";
+					$actions = '<a href="'.$module->url.'" target="_blank" title="No github download URL found">more</a>';
 				}
 				if($uninstallable) {
-					$actions = "<a href='{$module->url}' target='_blank' title='Uninstallable with Modules Manager'>more</a>";
+					$actions = '<a href="'.$module->url.'" target="_blank" title="Uninstallable with Modules Manager">more</a>';
 				}
 			}
 
 			//$this->modules->isInstalled($class_name);
 
-			$moduletbl->row(array(
-				"<b class='mname' title='$module->summary'>" . $module->title . "</b>",
-				"<a href='{$module->url}' target='_blank' class='icon' title='more infos'><span class='ui-icon ui-icon-info hoverdescr' id='{$module->name}'></span></a>",
+			$module_table->row(array(
+				'<b class="mname" title="'.$module->summary.'">' . $module->title . '</b>',
+				'<a href="'.$module->url.'" target="_blank" class="icon" title="more infos"><span class="ui-icon ui-icon-info hoverdescr" id="'.$module->name.'"></span></a>',
 				$module->release_state->title,
 				$remote_version,
 				$module->class_name,
-				implode(", ", $categories),
-				implode(", ", $authors),
-				date("Y/m/d", $module->modified),
+				implode(', ', $categories),
+				implode(', ', $authors),
+				date('Y/m/d', $module->modified),
 				$status,
 				$actions
 			));
@@ -275,15 +275,15 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$submit->attr('class', $submit->attr('class') . ' head_button_clone');
 		$form->add($submit);
 
-		$out .= $moduletbl->render();
+		$out .= $module_table->render();
 		// add table and button to form field wrapper
 		$form->attr('value', $out);
 
 		// category select filter
-		$catsform = $this->modules->get('InputfieldForm');
-		$catsform->attr('action', "./");
-		$catsform->attr('method', 'get');
-		$catsform->attr('id', 'modules_filter_form');
+		$categories_form = $this->modules->get('InputfieldForm');
+		$categories_form->attr('action', "./");
+		$categories_form->attr('method', 'get');
+		$categories_form->attr('id', 'modules_filter_form');
 
 		// category select
 		$cats = $this->modules->get("InputfieldSelect");
@@ -295,27 +295,27 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$cats->addOptions($all_categories);
 		$cats->value = wire('input')->get->cat; // selected the current requested GET
 		$cats->attr('onchange', 'submit()');
-		$catsform->append($cats);
+		$categories_form->append($cats);
 
-		$pretext = "<p>Modules found on modules.processwire.com (".$count.") </p>";
-		//$pretext .= "ProcessWire Version " . $this->config->version;
+		$pretext = '<p>Modules found on modules.processwire.com ('.$count.') </p>';
+		//$pretext .= 'ProcessWire Version ' . $this->config->version;
 		$info = $this->getModuleInfo();
-		return $pretext . $catsform->render() . $form->render() .  "<p>Modules Manager v{$info['version']}</p>";
+		return $pretext . $categories_form->render() . $form->render() .  '<p>Modules Manager v'.$info['version'].'</p>';
 	}
 
 
-	private function createCacheFile($cachefile) {
-		$contents = file_get_contents($this->getConfig('remoteurl') . "?apikey=" . $this->getConfig("apikey") . "&limit=" . $this->getConfig("limit"));
-		if(!$handle = fopen($cachefile, "w")) throw new WireException("cannot create cachefile $cachefile");
-		if(!fwrite($handle, $contents)) throw new WireException("cannot write cachefile $cachefile");
+	private function createCacheFile($cache_file) {
+		$contents = file_get_contents($this->getConfig('remoteurl') . '?apikey=' . $this->getConfig('apikey') . '&limit=' . $this->getConfig('limit'));
+		if(!$handle = fopen($cache_file, 'w')) throw new WireException('cannot create cache file '.$cache_file);
+		if(!fwrite($handle, $contents)) throw new WireException('cannot write cache file '.$cache_file);
 		fclose($handle);
 		return json_decode($contents);
 	}
 
 
-	private function readCacheFile($cachefile) {
-		if(!$handle = fopen($cachefile, "r")) throw new WireException("cannot open cachefile $cachefile");
-		if(!$contents = fread($handle, filesize($cachefile))) throw new WireException("cannot read cachefile $cachefile");
+	private function readCacheFile($cache_file) {
+		if(!$handle = fopen($cache_file, 'r')) throw new WireException('cannot open cache file '.$cache_file);
+		if(!$contents = fread($handle, filesize($cache_file))) throw new WireException('cannot read cache file '.$cache_file);
 		fclose($handle);
 		return json_decode($contents);
 	}
@@ -331,58 +331,58 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$tmp_dir = $this->config->paths->assets;
 		$tmp_zip = $tmp_dir . $this->downloadFileName;
 
-		if(!is_writable($this->config->paths->assets)) $this->error($this->_("Make sure assets directory is writeable for php."));
-		if(!is_writable($this->config->paths->siteModules)) $this->error($this->_("Make sure your site modules directory is writeable for php."));
+		if(!is_writable($this->config->paths->assets)) $this->error($this->_('Make sure assets directory is writeable for PHP.'));
+		if(!is_writable($this->config->paths->siteModules)) $this->error($this->_('Make sure your site modules directory is writeable for PHP.'));
 
 		// download the zip file and save it in assets directory
 		if($file = $this->downloadFile($url, $tmp_zip)) {
-			$this->message("Downloaded .zip successfully from $url");
+			$this->message('Downloaded zip file successfully from '.$url);
 			// if successfully downloaded extract it
 			$zip = new ZipArchive;
 			if($zip->open($file) === true) {
 				for($i = 0; $i < $zip->numFiles; $i++) {
 					$zip->extractTo($tmp_dir, array($zip->getNameIndex($i)));
 				}
-				$extracted_dirname = trim($zip->getNameIndex(0),"/");
+				$extracted_directory_name = trim($zip->getNameIndex(0),'/');
 				$zip->close();
 			} else {
-				throw new WireException("Could not open zip file");
+				throw new WireException('Could not open zip file');
 			}
 			// now create module directory and copy files over
 			// if it's an admin theme we place it in site folder or remove current
 			// if any found
-			if($this->input->get("theme")){
+			if($this->input->get('theme')){
 				// look for a templates-admin folder
-				if(glob($tmp_dir . $extracted_dirname . "/templates-admin", GLOB_ONLYDIR)){
-					$from = $tmp_dir . $extracted_dirname . "/templates-admin/";
+				if(glob($tmp_dir . $extracted_directory_name . '/templates-admin', GLOB_ONLYDIR)){
+					$from = $tmp_dir . $extracted_directory_name . '/templates-admin/';
 				} else {
-					$from = $tmp_dir . $extracted_dirname . "/";
+					$from = $tmp_dir . $extracted_directory_name . '/';
 				}
-				$dest_dir = $this->config->paths->root . "site/templates-admin";
+				$destination_directory = $this->config->paths->root . 'site/templates-admin';
 
 				// remove the templates-admin folder if present
-				if(file_exists($dest_dir)){
-					if(strlen($dest_dir) > 0){
-						if(!$this->removeDir($dest_dir)) throw new WireException("Could not remove templates-admin folder in site folder");
+				if(file_exists($destination_directory)){
+					if(strlen($destination_directory) > 0){
+						if(!$this->removeDir($destination_directory)) throw new WireException('Could not remove templates-admin folder in site folder');
 					}
 				}
 			} else {
-				$from = $tmp_dir . $extracted_dirname . "/";
-				$dest_dir = $this->config->paths->siteModules . $class_name;
+				$from = $tmp_dir . $extracted_directory_name . "/";
+				$destination_directory = $this->config->paths->siteModules . $class_name;
 			}
-			if($this->createDirectory($dest_dir)) {
-				if($this->recursiveCopy( $from, $dest_dir)) {
-					$this->message("Successfully copied files  to the directory: $dest_dir ");
+			if($this->createDirectory($destination_directory)) {
+				if($this->recursiveCopy( $from, $destination_directory)) {
+					$this->message('Successfully copied files  to the directory: '.$destination_directory);
 					$success = true;
 				}
 			} else {
-				$this->error("Could not create directory: $dest_dir");
+				$this->error('Could not create directory: '.$destination_directory);
 			}
 
 			// remove downloaded zip and extracted folder
-			if(!unlink($tmp_zip)) throw new WireException("Could not delete downloaded zip file $tmp_zip");
-			if(strlen($extracted_dirname) > 0){
-				if(!$this->removeDir($tmp_dir . $extracted_dirname)) throw new WireException("Could not delete downloaded temporary files {$tmp_dir}{$extracted_dirname}");
+			if(!unlink($tmp_zip)) throw new WireException('Could not delete downloaded zip file '.$tmp_zip);
+			if(strlen($extracted_directory_name) > 0){
+				if(!$this->removeDir($tmp_dir . $extracted_directory_name)) throw new WireException('Could not delete downloaded temporary files '.$tmp_dir.$extracted_directory_name);
 			}
 
 		}
@@ -394,24 +394,24 @@ class ModulesManager extends Process implements ConfigurableModule {
 			// reset modules cache, so we can install the module and PW knows about it
 			$this->modules->resetCache();
 
-			if($this->input->get("theme")){
-				$str = sprintf($this->_("Admin theme '%s' downloaded and extracted successfully. If it worked you should see the new theme already. If not you may clear your cache or refresh the page."),$class_name);
-				$text = "<p>" . $str  . "</p>";
+			if($this->input->get('theme')){
+				$str = sprintf($this->_('Admin theme `%s` downloaded and extracted successfully. If it worked you should see the new theme already. If not you may clear your cache or refresh the page.'),$class_name);
+				$text = '<p>' . $str  . '</p>';
 				return $text;
 			}
 			// check if modules isn't already installed and this isn't an update
 			if(!$this->modules->isInstalled($class_name)) {
-				$this->fuel->set("processHeadline", "You just downloaded $class_name");
+				$this->fuel->set('processHeadline', 'You just downloaded '.$class_name);
 
-				$str = sprintf($this->_("Module '%s' downloaded and extracted successfully. You can install it directly from here or any time later on the Modules admin page."),$class_name);
-				$text = "<p>" . $str . "</p>";
+				$str = sprintf($this->_('Module `%s` downloaded and extracted successfully. You can install it directly from here or any time later on the Modules admin page.'),$class_name);
+				$text = '<p>' . $str . '</p>';
 
 				$form = $this->modules->get('InputfieldForm');
 				$form->attr('action', $this->pages->get(21)->url );
 				$form->attr('method', 'post');
 				$form->attr('id', 'modules_form');
 
-				$field = "<input type='hidden' name='install' value='$class_name'/>";
+				$field = '<input type="hidden" name="install" value="'.$class_name.'"/>';
 				$form->value .= $field;
 
 				$submit = $this->modules->get('InputfieldSubmit');
@@ -421,30 +421,30 @@ class ModulesManager extends Process implements ConfigurableModule {
 				$text .= $form->render();
 
 			} else {
-				$this->fuel->set("processHeadline", "You just updated $class_name");
-				$str = sprintf($this->_("Module '%s' was updated successfully. Ready to check if everything still works! Or there's possibly new options."),$class_name);
-				$text = "<p>" . $str . " Module: <a href='{$this->pages->get(21)->url}edit?name={$class_name}'>$class_name</a></p>";"";
+				$this->fuel->set('processHeadline', 'You just updated '.$class_name);
+				$str = sprintf($this->_('Module `%s` was updated successfully. Ready to check if everything still work! Or if there are possibly new options.'),$class_name);
+				$text = '<p>' . $str . ' Module: <a href="'.$this->pages->get(21)->url.'edit?name='.$class_name.'">'.$class_name.'</a></p>';'';
 			}
 			return $text;
 
 		} else {
-			return "<p>" . $this->_('There seems to be a problem with downloading or writing the module.') . "</p>";
+			return '<p>' . $this->_('There seems to be a problem with downloading or writing the module.') . '</p>';
 		}
 	}
 
 	private function downloadFile($url, $fileName) {
 
 		// Define the options
-		$options = array('max_redirects' => $this->getConfig("max_redirects") );
+		$options = array('max_redirects' => $this->getConfig('max_redirects') );
 		$context = stream_context_create(array('http' => $options));
 
 		// download the zip
 		if(!$content = file_get_contents($url, $fileName, $context)) {
-			$this->error("File could not be downloaded $url");
+			$this->error('File could not be downloaded '.$url);
 			return false;
 		} else {
 			if(($fp = fopen($fileName, "wb")) === false) {
-				$this->error("fopen error for filename $fileName");
+				$this->error('fopen error for filename '.$fileName);
 				return false;
 			} else {
 				fwrite($fp, $content);
@@ -455,30 +455,30 @@ class ModulesManager extends Process implements ConfigurableModule {
 		return $fileName;
 	}
 
-	private function recursiveCopy($dirsource, $dirdest){
+	private function recursiveCopy($source_directory, $destination_directory){
 		// recursive function to copy
 		// all subdirectories and contents:
-		if(is_dir($dirsource)) $dir_handle = opendir($dirsource);
-		$dirname = substr($dirsource,strrpos($dirsource,"/")+1);
+		if(is_dir($source_directory)) $directory_handle = opendir($source_directory);
+		$directory_name = substr($source_directory,strrpos($source_directory,'/')+1);
 
-		wireMkdir($dirdest . "/" . $dirname);
-		while($file = readdir($dir_handle)) {
-			if($file != "." && $file != "..") {
-				if(!is_dir($dirsource . "/" . $file)) copy ($dirsource . "/" . $file, $dirdest . $dirname . "/" .$file);
-				else {
-					$dirdest1 = $dirdest . $dirname . "/";
-					$this->recursiveCopy($dirsource . "/" . $file, $dirdest1);
+		wireMkdir($destination_directory . '/' . $directory_name);
+		while($file = readdir($directory_handle)) {
+			if($file != '.' && $file != '..') {
+				if(!is_dir($source_directory . '/' . $file)) {
+					copy ($source_directory . '/' . $file, $destination_directory . $directory_name . '/' .$file);
+				} else {
+					$this->recursiveCopy($source_directory . '/' . $file, $destination_directory . $directory_name . '/');
 				}
 			}
 		}
-		closedir($dir_handle);
+		closedir($directory_handle);
 		return true;
 	}
 
 	private function createDirectory($directory){
 		if(!file_exists($directory)) {
 			if(!wireMkdir($directory)) {
-				$this->error("error creating module directory at: $directory");
+				$this->error('error creating module directory at: '.$directory);
 				return false;
 			}
 		}
@@ -488,21 +488,21 @@ class ModulesManager extends Process implements ConfigurableModule {
 	private function removeDir($dir){
 		foreach(scandir($dir) as $file) {
 			if($file === '.' || $file === '..') continue;
-			if(is_dir($dir ."/". $file)) {
-				$this->removeDir($dir ."/". $file);
+			if(is_dir($dir .'/'. $file)) {
+				$this->removeDir($dir .'/'. $file);
 			} else{
-				if(!unlink($dir ."/". $file)) throw new WireException("Could not remove file $file");
+				if(!unlink($dir .'/'. $file)) throw new WireException('Could not remove file '.$file);
 			}
 		}
-		if(!rmdir($dir)) throw new WireException("Could not remove directory $dir");
+		if(!rmdir($dir)) throw new WireException('Could not remove directory '.$dir);
 		return true;
 	}
 
 	public function install() {
 		// page already found for some reason
-		if(count($this->pages->find("name=".__CLASS__))) return;
+		if(count($this->pages->find('name='.__CLASS__))) return;
 		$p = new Page();
-		$p->template = $this->templates->get("admin");
+		$p->template = $this->templates->get('admin');
 		$p->title = __CLASS__;
 		$p->name = __CLASS__;
 		$p->parent = $this->pages->get(22);
@@ -511,12 +511,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 	}
 
 	public function uninstall() {
-		$found = $this->pages->find("name=".__CLASS__)->first();
+		$found = $this->pages->find('name='.__CLASS__)->first();
 		if(count($found)) $found->delete();
-		$cachefile = $this->config->paths->cache . $this->cacheFile;
-		if(file_exists($cachefile)) {
-			if(!unlink($cachefile)) throw new WireException("Could not delete cache file $cachefile");
-			else $this->message("Cache file deleted successfully $cachefile");
+		$cache_file = $this->config->paths->cache . $this->cacheFile;
+		if(file_exists($cache_file)) {
+			if(!unlink($cache_file)) throw new WireException('Could not delete cache file '.$cache_file);
+			else $this->message('Cache file deleted successfully '.$cache_file);
 		}
 
 	}
@@ -525,33 +525,33 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$data = array_merge(self::$defaults, $data);
 
 		$fields = new InputfieldWrapper();
-		$modules = wire("modules");
+		$modules = wire('modules');
 
-		$field = $modules->get("InputfieldText");
+		$field = $modules->get('InputfieldText');
 		$field->attr('name', 'apikey');
 		$field->attr('size', 10);
 		$field->attr('value', $data['apikey']);
 		// $field->set("collapsed",Inputfield::collapsedHidden);
-		$field->label = "modules.processwire.com APIkey";
+		$field->label = 'modules.processwire.com APIkey';
 		$fields->append($field);
 
-		$field = $modules->get("InputfieldText");
+		$field = $modules->get('InputfieldText');
 		$field->attr('name', 'remoteurl');
 		$field->attr('size', 0);
 		$field->attr('value', $data['remoteurl']);
-		$field->label = "URL to webservice";
+		$field->label = 'URL to webservice';
 		$fields->append($field);
 
-		$field = $modules->get("InputfieldInteger");
+		$field = $modules->get('InputfieldInteger');
 		$field->attr('name', 'limit');
 		$field->attr('value', $data['limit']);
-		$field->label = "Limit";
+		$field->label = 'Limit';
 		$fields->append($field);
 
-		$field = $modules->get("InputfieldInteger");
+		$field = $modules->get('InputfieldInteger');
 		$field->attr('name', 'max_redirects');
 		$field->attr('value', $data['max_redirects']);
-		$field->label = "Max Redirects for file_get_contents stream context (in case)";
+		$field->label = 'Max Redirects for file_get_contents stream context (in case)';
 		$fields->append($field);
 
 		return $fields;
