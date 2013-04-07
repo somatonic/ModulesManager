@@ -62,10 +62,9 @@ class ModulesManager extends Process implements ConfigurableModule {
 	/**
 	 * this method is called when ProcessWire is read and loaded the module
 	 * used here to get scripts and css files loaded automatically
-	 * @return module returns parent init
 	 */
 	public function init() {
-		return parent::init();
+		parent::init();
 	}
 
 	/**
