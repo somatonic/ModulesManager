@@ -459,16 +459,18 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$directory_name = substr($source_directory,strrpos($source_directory,'/')+1);
 
 		wireMkdir($destination_directory . '/' . $directory_name);
-		while($file = readdir($directory_handle)) {
-			if($file != '.' && $file != '..') {
-				if(!is_dir($source_directory . '/' . $file)) {
-					copy ($source_directory . '/' . $file, $destination_directory . $directory_name . '/' .$file);
-				} else {
-					$this->recursiveCopy($source_directory . '/' . $file, $destination_directory . $directory_name . '/');
+		if($directory_handle == false){
+			while($file = readdir($directory_handle)) {
+				if($file != '.' && $file != '..') {
+					if(!is_dir($source_directory . '/' . $file)) {
+						copy ($source_directory . '/' . $file, $destination_directory . $directory_name . '/' .$file);
+					} else {
+						$this->recursiveCopy($source_directory . '/' . $file, $destination_directory . $directory_name . '/');
+					}
 				}
 			}
+			closedir($directory_handle);
 		}
-		closedir($directory_handle);
 		return true;
 	}
 
