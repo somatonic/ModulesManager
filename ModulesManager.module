@@ -166,8 +166,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$filterout = false;
 
 			// filter out unwanted categories
-			foreach($this->exclude_categories as $key => $exc) {
-				if(array_key_exists($key,$categories)){
+			foreach($this->exclude_categories as $k => $exc) {
+				if(array_key_exists($k,$categories)){
 					$uninstallable = true;
 					break;
 				}
