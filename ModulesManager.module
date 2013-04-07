@@ -423,7 +423,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 			} else {
 				$this->fuel->set('processHeadline', 'You just updated '.$class_name);
 				$str = sprintf($this->_('Module `%s` was updated successfully. Ready to check if everything still work! Or if there are possibly new options.'),$class_name);
-				$text = '<p>' . $str . ' Module: <a href="'.$this->pages->get(21)->url.'edit?name='.$class_name.'">'.$class_name.'</a></p>';'';
+				$text = '<p>' . $str . ' Module: <a href="'.$this->pages->get(21)->url.'edit?name='.$class_name.'">'.$class_name.'</a></p>';
 			}
 			return $text;
 
