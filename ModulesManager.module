@@ -215,7 +215,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 							if((substr($module->download_url,0,8) == 'https://') && extension_loaded('openssl')){
 								$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.'">update</a>';
 							} else {
-								$actions = '<a href="'.$module->url.'" target="_blank" title="The download URL cannot be used since the server does not have the openssl extension loaded.">update</a>';
+								$actions = '<a href="'.$module->url.'" target="_blank" title="The download URL cannot be used since the server does not have the openssl extension loaded.">more</a>';
 							}
 						} else {
 							$actions = '<a href="'.$module->url.'" target="_blank" title="No github download URL found">more</a>';
@@ -241,7 +241,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 					if((substr($module->download_url,0,8) == 'https://') && extension_loaded('openssl')){
 						$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.$theme.'"'.$confirm.' title="Download and install">download</a>';
 					} else {
-						$actions = '<a href="'.$module->url.'" target="_blank" title="The download URL cannot be used since the server does not have the openssl extension loaded.">update</a>';
+						$actions = '<a href="'.$module->url.'" target="_blank" title="The download URL cannot be used since the server does not have the openssl extension loaded.">more</a>';
 					}
 				} else {
 					$actions = '<a href="'.$module->url.'" target="_blank" title="No github download URL found">more</a>';
