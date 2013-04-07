@@ -212,7 +212,11 @@ class ModulesManager extends Process implements ConfigurableModule {
 						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span><br/>';
 						$status .= '<span class="ui-state-update">new version available!</span><br/>';
 						if($module->download_url) {
-							$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.'">update</a>';
+							if((substr($module->download_url,0,8) == 'https://') && extension_loaded('openssl')){
+								$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.'">update</a>';
+							} else {
+								$actions = '<a href="'.$module->url.'" target="_blank" title="The download URL cannot be used since the server does not have the openssl extension loaded.">update</a>';
+							}
 						} else {
 							$actions = '<a href="'.$module->url.'" target="_blank" title="No github download URL found">more</a>';
 						}
@@ -234,7 +238,11 @@ class ModulesManager extends Process implements ConfigurableModule {
 				}
 
 				if($module->download_url) {
-					$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.$theme.'"'.$confirm.' title="Download and install">download</a>';
+					if((substr($module->download_url,0,8) == 'https://') && extension_loaded('openssl')){
+						$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.$theme.'"'.$confirm.' title="Download and install">download</a>';
+					} else {
+						$actions = '<a href="'.$module->url.'" target="_blank" title="The download URL cannot be used since the server does not have the openssl extension loaded.">update</a>';
+					}
 				} else {
 					$actions = '<a href="'.$module->url.'" target="_blank" title="No github download URL found">more</a>';
 				}
@@ -335,6 +343,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		if(!is_writable($this->config->paths->siteModules)) $this->error($this->_('Make sure your site modules directory is writeable for PHP.'));
 
 		// download the zip file and save it in assets directory
+		$success = false;
 		if($file = $this->downloadFile($url, $tmp_zip)) {
 			$this->message('Downloaded zip file successfully from '.$url);
 			// if successfully downloaded extract it
@@ -431,6 +440,11 @@ class ModulesManager extends Process implements ConfigurableModule {
 	}
 
 	private function downloadFile($url, $fileName) {
+
+		if((substr($url,0,8) == 'https://') && ! extension_loaded('openssl')) {
+			$this->error('OpenSSL extension required but not available. File could not be downloaded from '.$url);
+			return false;
+		}
 
 		// Define the options
 		$options = array('max_redirects' => $this->getConfig('max_redirects') );
