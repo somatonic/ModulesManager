@@ -41,7 +41,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 106,
+			'version' => 107,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => '',
 			'singular' => true,
@@ -429,6 +429,13 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$submit->attr('name', 'submit');
 			$submit->attr('value', $this->_('install module'));
 			$form->add($submit);
+
+			$button = $this->modules->get('InputfieldButton');
+			$button->attr('href', '../');
+			$button->attr('value', $this->_('back to Modules Manager'));
+			$button->attr('id', 'backtomanagerbutton');
+			$form->add($button);
+
 			$text .= $form->render();
 
 		} else {
@@ -473,7 +480,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$directory_name = substr($source_directory,strrpos($source_directory,'/')+1);
 
 		wireMkdir($destination_directory . '/' . $directory_name);
-		if($directory_handle == false){
+		if($directory_handle != false){
 			while($file = readdir($directory_handle)) {
 				if($file != '.' && $file != '..') {
 					if(!is_dir($source_directory . '/' . $file)) {

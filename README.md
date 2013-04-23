@@ -21,6 +21,12 @@ This module is planned to be added to core distribution. So any help developing 
 
 #### Versions Log
 
+1.0.7
+
+- multitude of fixed and code cleanup (@petsagouris)
+- added check for openssl module required for https download stream (@petsagouris)
+- added back to Modules Manager button on download/update screen
+
 1.0.6
 
 - replace "page-edit" permission for module with "modules-manager"
