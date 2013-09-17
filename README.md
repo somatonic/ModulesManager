@@ -14,10 +14,6 @@ If you update a module it will do the same process as above, and just replace th
 #### Notes
 This version is still alpha and in testing. Feel free to try it out own your own risk. Current version uses file_get_contents" and "copy" php methods to retrieve the json feed from external domain. This requires the php to allow it in php (allow_url_fopen). Download of the module zip is done using copy(). Also on my local install I had to adjust the /site/modules/ and /site/assets/ directory to have write permission by php.
 
-#### Future & Contributions
-
-This module is planned to be added to core distribution. So any help developing this further and replace the core modules page is greatly appreciated.
-
 
 #### Versions Log
 
