@@ -131,14 +131,9 @@ class ModulesManager extends Process implements ConfigurableModule {
 		}
 		
 		$paginatorArray = new PageArray();
-		// foreach($this->modulesRemoteArray->items as $item){
-		// 	$dummyitem = new Page();
-		// 	$paginatorArray->add($dummyitem);
-		// }
 		$paginatorArray->setTotal($this->modulesRemoteArray->total);
 		$paginatorArray->setLimit($this->modulesRemoteArray->limit);
 		$paginatorArray->setStart($this->modulesRemoteArray->start);
-		
 		
 
 		// get current installed modules in PW and store it in array
@@ -195,9 +190,11 @@ class ModulesManager extends Process implements ConfigurableModule {
 					break;
 				}
 			}
+			
 			// filter for selected category
 			if( isset(wire('input')->get->cat) ) {
-				$selected_cat = wire('input')->get->cat;
+				$selected_cat = wire("sanitizer")->pageName(wire('input')->get->cat);
+				wire("input")->whitelist("cat", $selected_cat);
 				if($selected_cat){
 					if(!array_key_exists(wire('input')->get->cat, $categories)) {
 						$filterout = true;
@@ -343,7 +340,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$info = $this->getModuleInfo();
 
 		// pager
-		$pagerMarkup = $paginatorArray->renderPager(array('getVars' => array('cat' => $this->input->get->cat)));
+		$pagerMarkup = $paginatorArray->renderPager();
 
 		return $pretext . $categories_form->render() . $pagerMarkup . $form->render() . $pagerMarkup . '<p>Modules Manager v'.$info['version'].'</p>';
 	}
