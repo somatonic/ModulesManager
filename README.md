@@ -1,4 +1,4 @@
-# Modules Manager
+# Modules Manager alpha for ProcessWire2.+
 
 Module Manager enables you to browse the modules directory on modules.processwire.com, download, install or update them.
 
@@ -14,4 +14,38 @@ If you update a module it will do the same process as above, and just replace th
 #### Notes
 This version is still alpha and in testing. Feel free to try it out own your own risk. Current version uses file_get_contents" and "copy" php methods to retrieve the json feed from external domain. This requires the php to allow it in php (allow_url_fopen). Download of the module zip is done using copy(). Also on my local install I had to adjust the /site/modules/ and /site/assets/ directory to have write permission by php.
 
-Currently it does hide modules for Language Packs, and Admin Themes, since those would require a complete different install routine. Although it should be simple for admin themes to get it to work, but I first have to make sure regular modules work.
+
+#### Versions Log
+
+1.0.7
+
+- multitude of fixed and code cleanup (@petsagouris)
+- added check for openssl module required for https download stream (@petsagouris)
+- added back to Modules Manager button on download/update screen
+
+1.0.6
+
+- replace "page-edit" permission for module with "modules-manager"
+- added version output on modules screen footer
+
+1.0.5
+
+- added max_redirects config option used by download stream context. Increase this value if download of zip failes. default 3.
+- some maintenance
+
+1.0.4
+
+- added back support for PW 2.2
+- some maintenance
+
+1.0.3
+
+- Language Packs and Site Profiles now show up but will have a "more" link to the repository page.
+- Added check if no download github url found to give a "more" link to the modules url
+- requires ProcessWire v2.3
+
+1.0.2
+
+- add support for admin themes install
+
+
