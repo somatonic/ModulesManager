@@ -154,14 +154,15 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$module_table = wire('modules')->get('MarkupAdminDataTable');
 		$module_table->setEncodeEntities(false);
 		$header = array(
-
-			$this->_('name/version'),
-			$this->_('module title/summary'),
-			$this->_('categories'),
-			$this->_('author(s)'),
-			$this->_('modified'),
-			$this->_('status'),
-			$this->_('action')
+			$this->_('Name/Version'),
+			$this->_('Module Title/Summary'),
+			$this->_('Categories'),
+			$this->_('Author(s)'),
+			$this->_('Added'),
+			$this->_('Modified'),
+			$this->_('Likes'),
+			$this->_('Status'),
+			$this->_('Action')
 		);
 
 		$module_table->headerRow($header);
@@ -293,12 +294,16 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 			$module_table->row(array(
 				'<b class="mm_mname">' . $module->class_name . '</b>' . '<br/>' .  $remote_version . " " . $module->release_state->title,
-				'<b>' . $module->title . '</b><br/>' . $module->summary . '<a href="'.$module->url.'" target="_blank" class="icon"> ' . $this->_("more") . '</a>' . $dependencies,
+
+				'<b>' . $module->title . '</b><br/>' . $module->summary . '<a href="'.$module->url.'" target="_blank" class="icon"> '
+					. $this->_("more") . '</a>' . $dependencies,
 
 				implode(', ', $categories),
 				implode(', ', $authors),
 
+				date('Y/m/d', $module->created),
 				date('Y/m/d', $module->modified),
+				'+' . $module->likes,
 				$status ,
 				$actions
 			));
