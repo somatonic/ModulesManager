@@ -17,6 +17,12 @@ This version is still alpha and in testing. Feel free to try it out own your own
 
 #### Versions Log
 
+1.0.9
+
+- fixes dependency issue with extending module that isn't installed yet
+- installing module now only possible if requirements are met by the module info
+- some changes to the module table columns and showing summary directly
+
 1.0.7
 
 - multitude of fixed and code cleanup (@petsagouris)

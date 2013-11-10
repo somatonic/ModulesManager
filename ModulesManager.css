@@ -1,20 +1,18 @@
 .AdminDataTable {
-	line-height: 1.4em;
+    line-height: 1.3em;
+    font-size: 0.95em;
 }
 .AdminDataTable thead tr th {
-	padding: 4px 10px 4px 2px;
+    padding: 10px!important;
 }
 .AdminDataTable tbody tr td {
-	padding: 4px 10px 4px 2px;
+    padding: 10px!important;
 }
 .AdminDataTable tbody tr:hover td {
-	background-color: #eee;
 }
 
 a.icon:hover { background-color: #fff; }
 .ui-state-update { color: red; }
 .ui-state-installed { color: #4db101; }
 
-.mname:hover {
-	cursor: help;
-}
+.mm_mname { white-space: nowrap; }
