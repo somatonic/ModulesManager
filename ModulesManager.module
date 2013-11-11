@@ -22,6 +22,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 			'max_redirects' => 3
 		);
 
+	// uninstallable
 	protected $exclude_categories = array(
 		'language-pack' => 'Language Packs',
 		'site-profile' => 'Site Profiles'
@@ -190,6 +191,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 					break;
 				}
 			}
+
 			// filter for selected category
 			if( isset(wire('input')->get->cat) ) {
 				$selected_cat = wire('input')->get->cat;
@@ -205,7 +207,6 @@ class ModulesManager extends Process implements ConfigurableModule {
 			// lets add a link to the modules.processwire.com instead
 
 			$count++;
-
 
 			$authors = array();
 			foreach($module->authors as $auth) $authors[] = $auth->title;
@@ -237,74 +238,39 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 					$status = 'found: ' . $local_version;
 
-					$btnAttr = count($requires) ? ' disabled="disabled"' : '';
-					$actions = '<button' . $btnAttr . ' type="submit" id="install_' . $module->class_name . '" name="install" class="install" value="' . $module->class_name.'">' . $this->_x('install', 'button') . '</button>';
-
+					if(count($requires)) {
+						$actions = $this->getActions($module, $uninstallable, 'not_install');
+					} else {
+						$actions = $this->getActions($module, $uninstallable, 'install');
+					}
 				} else {
 					if($remote_version > $local_version) {
 						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span><br/>';
 						$status .= '<span class="ui-state-update">new version available!</span><br/>';
-						if($module->download_url) {
-							if(substr($module->download_url,0,8) == 'https://'){
-								if(extension_loaded('openssl')) {
-									$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.'">update</a>';
-								} else {
-									$actions = '<a href="'.$module->url.'" target="_blank" title="The download URL cannot be used since the server does not have the openssl extension loaded.">more</a>';
-								}
-							} else {
-								$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.'">update</a>';
-							}
-						} else {
-							$actions = '<a href="'.$module->url.'" target="_blank" title="No download URL found">more</a>';
-						}
-						if($uninstallable) {
-							$actions = '<a href="'.$module->url.'" target="_blank" title="Uninstallable with Modules Manager">more</a>';
-						}
-					} else{
+
+						$actions = $this->getActions($module, $uninstallable, 'update');
+
+					} else {
 						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span>';
-						$actions = '<a href="'.$this->pages->get(21)->url.'edit?name='.$module->class_name.'">edit</a>';
+						$actions = $this->getActions($module, $uninstallable, 'edit');
 					}
 				}
 			} else {
 				$theme = isset($categories['admin-theme']) ? '&theme=1' : '' ;
-				if($theme) {
-					$install_text = $this->_('This will install the theme and delete the previous! If you have altered the /site/templates-admin/ theme or have your own, you might consider backing it up first.');
-					$confirm =  'onclick="return confirm(\''.$install_text.'\')"';
-				} else {
-					$confirm =  '';
-				}
-
-				if($module->download_url) {
-					if(substr($module->download_url,0,8) == 'https://') {
-						if(extension_loaded('openssl')){
-							$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.$theme.'"'.$confirm.' title="Download and install">download</a>';
-						} else {
-							$actions = '<a href="'.$module->url.'" target="_blank" title="The download URL cannot be used since the server does not have the openssl extension loaded.">more</a>';
-						}
-					} else {
-						$actions = '<a href="./download/?url='.$module->download_url.'&class='.$module->class_name.$theme.'"'.$confirm.' title="Download and install">download</a>';
-					}
-				} else {
-					$actions = '<a href="'.$module->url.'" target="_blank" title="No download URL found">more</a>';
-				}
-				if($uninstallable) {
-					$actions = '<a href="'.$module->url.'" target="_blank" title="Uninstallable with Modules Manager">more</a>';
-				}
+				$actions = $this->getActions($module, $uninstallable, 'download', $theme);
 			}
 
 			$module_table->row(array(
-				'<b class="mm_mname">' . $module->class_name . '</b>' . '<br/>' .  $remote_version . " " . $module->release_state->title,
-
+				'<b class="mm_mname">' . $module->class_name . '</b>' . '<br/>'
+					.  $remote_version . " " . $module->release_state->title,
 				'<b>' . $module->title . '</b><br/>' . $module->summary . '<a href="'.$module->url.'" target="_blank" class="icon"> '
 					. $this->_("more") . '</a>' . $dependencies,
-
 				implode(', ', $categories),
 				implode(', ', $authors),
-
 				date('Y/m/d', $module->created),
 				date('Y/m/d', $module->modified),
 				'+' . $module->likes,
-				$status ,
+				$status,
 				$actions
 			));
 
@@ -498,6 +464,67 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 		return $text;
 	}
+
+
+	private function getActions($module, $uninstallable, $action='', $theme) {
+
+		if($uninstallable) {
+			return '(uninstallable)<br/><a href="'.$module->url.'" target="_blank" title="Uninstallable with Modules Manager">more</a>';
+		}
+
+		$confirm = '';
+		$btn_class = " class='ui-button ui-widget ui-state-default ui-corner-all'";
+
+		if($theme) {
+			$install_text = $this->_('This will install the theme and delete the previous! If you have altered the /site/templates-admin/ theme or have your own, you might consider backing it up first.');
+			$confirm = " onclick='return confirm(\"$install_text\");'";
+		} else {
+			$install_text = $this->_('Ensure that you trust the source of the ZIP file before continuing!');
+			$confirm = " onclick='return confirm(\"$install_text\");'";
+		}
+
+		if($module->download_url) {
+			if(substr($module->download_url,0,8) == 'https://' && !extension_loaded('openssl')) {
+				$actions = 'no openssl installed!';
+			} else {
+				if($action == 'edit') {
+					$button = $this->modules->get('InputfieldMarkup');
+					$url = "{$this->pages->get(21)->url}edit?name={$module->class_name}";
+					$button->value = "<a href='$url' id='{$module->class_name}'>" . $this->_("edit") . "</a>";
+				}
+				else if($action == 'update') {
+					$button = $this->modules->get('InputfieldMarkup');
+					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}";
+					$button->value = "<a href='$url'$confirm id='{$module->class_name}'>" . $this->_("update") . "</a>";
+				}
+				else if($action == 'download') {
+					$button = $this->modules->get('InputfieldMarkup');
+					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}";
+					$button->value = "<a href='$url'$confirm id='{$module->class_name}'>" . $this->_("download") . "</a>";
+
+				}
+				else if($action == 'install') {
+					$button = $this->modules->get('InputfieldMarkup');
+					$button->value = "<button name='install' value='{$module->class_name}'>" . $this->_("install") . "</button>";
+				}
+				else if($action == 'not_install') {
+					$button = $this->modules->get('InputfieldMarkup');
+					$button->value = "<button name='not_install' disabled='disabled' value='{$module->class_name}'><s>" . $this->_("install") . "</s></button>";
+				}
+
+				$actions = $button->render();
+			}
+		} else {
+			// in case a module has no dl url but is already downloaded and can be installed
+			if($this->modules->isInstallable($module->class_name)) {
+				$actions = "<button name='install' value='{$module->class_name}'>install</button>";
+			} else {
+				$actions = '<a href="'.$module->url.'" target="_blank" title="No download URL found">more</a>';
+			}
+		}
+		return $actions;
+	}
+
 
 	private function downloadFile($url, $fileName) {
 
