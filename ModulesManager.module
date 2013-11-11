@@ -466,14 +466,13 @@ class ModulesManager extends Process implements ConfigurableModule {
 	}
 
 
-	private function getActions($module, $uninstallable, $action='', $theme) {
+	private function getActions($module, $uninstallable, $action='', $theme='') {
 
 		if($uninstallable) {
 			return '(uninstallable)<br/><a href="'.$module->url.'" target="_blank" title="Uninstallable with Modules Manager">more</a>';
 		}
 
 		$confirm = '';
-		$btn_class = " class='ui-button ui-widget ui-state-default ui-corner-all'";
 
 		if($theme) {
 			$install_text = $this->_('This will install the theme and delete the previous! If you have altered the /site/templates-admin/ theme or have your own, you might consider backing it up first.');
