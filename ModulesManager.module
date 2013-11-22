@@ -195,10 +195,14 @@ class ModulesManager extends Process implements ConfigurableModule {
 			// filter for selected category
 			if( isset(wire('input')->get->cat) ) {
 				$selected_cat = wire('input')->get->cat;
-				if($selected_cat){
+				if($selected_cat && (string)$selected_cat!="-local"){
 					if(!array_key_exists(wire('input')->get->cat, $categories)) {
 						$filterout = true;
 					}
+				}
+				// found local installed and uninstalled
+				else if(!array_key_exists($module->class_name, $this->modulesArray)) {
+					$filterout = true;
 				}
 			}
 
@@ -304,7 +308,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$cats = $this->modules->get('InputfieldSelect');
 		$cats->attr('id+name', 'cat');
 		$cats->label = 'Filter categories';
-		$all_categories = array_merge($all_categories, array('' => ''));
+		$all_categories = array_merge($all_categories, array('' => ''), array('-local' => 'Local Modules'));
 		//$all_categories = array_diff($all_categories, $this->exclude_categories);
 		ksort($all_categories);
 		$cats->addOptions($all_categories);
