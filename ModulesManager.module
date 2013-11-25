@@ -614,7 +614,14 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 	public function install() {
 		// page already found for some reason
-		if(count($this->pages->find('name='.__CLASS__))) return;
+		$ap = $this->pages->find('name='.__CLASS__)->first();
+		if($ap->id) {
+			if(!$ap->process) {
+				$ap->process = $this;
+				$ap->save();
+			}
+			return;
+		}
 		$p = new Page();
 		$p->template = $this->templates->get('admin');
 		$p->title = __CLASS__;
