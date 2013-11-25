@@ -17,6 +17,10 @@ This version is still alpha and in testing. Feel free to try it out own your own
 
 #### Versions Log
 
+1.1.0
+
+- fixes bug with uninstall not removing the ModulesManager admin page correctly
+
 1.0.9
 
 - fixes dependency issue with extending module that isn't installed yet
