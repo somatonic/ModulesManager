@@ -42,7 +42,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 110,
+			'version' => 111,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => '',
 			'singular' => true,
@@ -114,7 +114,6 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$this->error($this->_('Make sure your /site/modules directory is writeable by PHP.'));
 		}
 
-
 		// construct the cache file path for json feed
 		$cache_file = $this->config->paths->cache . $this->cacheFile;
 
@@ -152,8 +151,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$out = '';
 
 		// start output of module list
-		$module_table = wire('modules')->get('MarkupAdminDataTable');
-		$module_table->setEncodeEntities(false);
+		$this->module_table = wire('modules')->get('MarkupAdminDataTable');
+		$this->module_table->setEncodeEntities(false);
 		$header = array(
 			$this->_('Name/Version'),
 			$this->_('Module Title/Summary'),
@@ -166,10 +165,10 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$this->_('Action')
 		);
 
-		$module_table->headerRow($header);
+		$this->module_table->headerRow($header);
 
 		$count = 0;
-		$all_categories = array();
+		$this->all_categories = array();
 
 		// loop the module list we got from the json feed and we do
 		// various checks here to see if it's up to date or installed
@@ -178,7 +177,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$categories = array();
 
 			foreach($module->categories as $cat) $categories[$cat->name] = $cat->title;
-			$all_categories = array_merge($all_categories, $categories);
+			//$all_categories = array_merge($all_categories, $categories);
+			$this->all_categories = array_merge($this->all_categories, $categories);
 
 			// exclude modules
 			$uninstallable = false;
@@ -260,7 +260,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 				$actions = $this->getActions($module, $uninstallable, 'download', $theme);
 			}
 
-			$module_table->row(array(
+			$this->module_table->row(array(
 				'<b class="mm_mname">' . $module->class_name . '</b>' . '<br/>'
 					.  $remote_version . " " . $module->release_state->title,
 				'<b>' . $module->title . '</b><br/>' . $module->summary . '<a href="'.$module->url.'" target="_blank" class="icon"> '
@@ -276,46 +276,15 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 		}
 
-		// build form
-		$form = $this->modules->get('InputfieldForm');
-		$form->attr('action', $this->pages->get(21)->url);
-		$form->attr('method', 'post');
-		$form->attr('id', 'modules_form');
 
-		// refresh button
-		$submit = $this->modules->get('InputfieldButton');
-		$submit->attr('href', './?reset=1');
-		$submit->attr('name', 'reset');
-		$submit->attr('value', $this->_('refresh'));
-		$submit->attr('class', $submit->attr('class') . ' head_button_clone');
-		$form->add($submit);
 
-		$out .= $module_table->render();
-		// add table and button to form field wrapper
-		$form->attr('value', $out);
-
-		// category select filter
-		$categories_form = $this->modules->get('InputfieldForm');
-		$categories_form->attr('action', './');
-		$categories_form->attr('method', 'get');
-		$categories_form->attr('id', 'modules_filter_form');
-
-		// category select
-		$cats = $this->modules->get('InputfieldSelect');
-		$cats->attr('id+name', 'cat');
-		$cats->label = 'Filter categories';
-		$all_categories = array_merge($all_categories, array('' => ''));
-		//$all_categories = array_diff($all_categories, $this->exclude_categories);
-		ksort($all_categories);
-		$cats->addOptions($all_categories);
-		$cats->value = wire('input')->get->cat; // selected the current requested GET
-		$cats->attr('onchange', 'submit()');
-		$categories_form->append($cats);
+		$categories_form = $this->createCategoryForm()->render();
+		$form = $this->createForm()->render();
 
 		$pretext = '<p>Modules found on modules.processwire.com ('.$count.') </p>';
 		//$pretext .= 'ProcessWire Version ' . $this->config->version;
 		$info = $this->getModuleInfo();
-		return $pretext . $categories_form->render() . $form->render() .  '<p>Modules Manager v'.$info['version'].'</p>';
+		return $pretext . $categories_form . $form .  '<p>Modules Manager v'.$info['version'].'</p>';
 	}
 
 
@@ -465,6 +434,63 @@ class ModulesManager extends Process implements ConfigurableModule {
 		return $text;
 	}
 
+	public function createForm(){
+		// build form
+		$form = $this->modules->get('InputfieldForm');
+		$form->attr('action', $this->pages->get(21)->url);
+		$form->attr('method', 'post');
+		$form->attr('id', 'modules_form');
+
+		// refresh button
+		$submit = $this->modules->get('InputfieldButton');
+		$submit->attr('href', './?reset=1');
+		$submit->attr('name', 'reset');
+		$submit->attr('value', $this->_('refresh'));
+		$submit->attr('class', $submit->attr('class') . ' head_button_clone');
+		$form->add($submit);
+
+		$table = $this->module_table->render();
+		// add table and button to form field wrapper
+		$form->attr('value', $table);
+
+		return $form;
+
+	}
+
+	public function createCategoryForm(){
+
+		// category select filter
+		$categories_form = $this->modules->get('InputfieldForm');
+		$categories_form->attr('action', './');
+		$categories_form->attr('method', 'get');
+		$categories_form->attr('id', 'modules_filter_form');
+
+		// category select
+		$cats = $this->modules->get('InputfieldSelect');
+		$cats->attr('id+name', 'cat');
+		$cats->label = $this->_('Filter categories');
+		$categories = array_merge($this->all_categories, array('' => ''));
+
+		//$all_categories = array_diff($all_categories, $this->exclude_categories);
+		ksort($categories);
+
+		$cats->addOptions($categories);
+		$cats->value = wire('input')->get->cat; // selected the current requested GET
+		$cats->attr('onchange', 'submit()');
+		$cats->columnWidth = 70;
+		$categories_form->append($cats);
+
+
+		// category select
+		$search = $this->modules->get('InputfieldText');
+		$search->attr('id+name', 'mm_filter');
+		$search->label = $this->_('Live Search');
+		$search->attr("type","search");
+		$search->columnWidth = 30;
+		$categories_form->append($search);
+
+		return $categories_form;
+	}
 
 	private function getActions($module, $uninstallable, $action='', $theme='') {
 
@@ -486,28 +512,24 @@ class ModulesManager extends Process implements ConfigurableModule {
 			if(substr($module->download_url,0,8) == 'https://' && !extension_loaded('openssl')) {
 				$actions = 'no openssl installed!';
 			} else {
+				$button = $this->modules->get('InputfieldMarkup');
 				if($action == 'edit') {
-					$button = $this->modules->get('InputfieldMarkup');
 					$url = "{$this->pages->get(21)->url}edit?name={$module->class_name}";
 					$button->value = "<a href='$url' id='{$module->class_name}'>" . $this->_("edit") . "</a>";
 				}
 				else if($action == 'update') {
-					$button = $this->modules->get('InputfieldMarkup');
 					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}";
 					$button->value = "<a href='$url'$confirm id='{$module->class_name}'>" . $this->_("update") . "</a>";
 				}
 				else if($action == 'download') {
-					$button = $this->modules->get('InputfieldMarkup');
 					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}";
 					$button->value = "<a href='$url'$confirm id='{$module->class_name}'>" . $this->_("download") . "</a>";
 
 				}
 				else if($action == 'install') {
-					$button = $this->modules->get('InputfieldMarkup');
 					$button->value = "<button name='install' value='{$module->class_name}'>" . $this->_("install") . "</button>";
 				}
 				else if($action == 'not_install') {
-					$button = $this->modules->get('InputfieldMarkup');
 					$button->value = "<button name='not_install' disabled='disabled' value='{$module->class_name}'><s>" . $this->_("install") . "</s></button>";
 				}
 
@@ -616,12 +638,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 		// page already found for some reason
 		$ap = $this->pages->find('name='.__CLASS__)->first();
 		if($ap->id) {
-			if(!$ap->process) {
-				$ap->process = $this;
-				$ap->save();
-			}
-			return;
-		}
+            if(!$ap->process) {
+                    $ap->process = $this;
+                    $ap->save();
+            }
+            return;
+        }
 		$p = new Page();
 		$p->template = $this->templates->get('admin');
 		$p->title = __CLASS__;
