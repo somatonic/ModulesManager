@@ -30,8 +30,9 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 	protected $modulesArray = array();
 	protected $modulesRemoteArray = array();
-	protected $cacheFile = 'ModuleManager.cache';
 	protected $downloadFileName = 'ModuleManagerDownload.zip';
+
+	public $cacheFile;
 
 	/**
 	 * getModuleInfo is a module required by all modules to tell ProcessWire about them
@@ -42,12 +43,13 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 111,
+			'version' => 200,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => '',
 			'singular' => true,
 			'autoload' => false,
-			'permission' => 'modules-manager'
+			'permission' => 'modules-manager',
+			'requires' => array("JqueryDataTables")
 			);
 	}
 
@@ -67,8 +69,41 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public function init() {
 		parent::init();
 
+		$this->modules->JqueryDataTables;
+
+		$this->use_modal = '';
+		if($this->modules->isInstalled("JqueryMagnific")){
+			$this->modules->JqueryMagnific;
+			$this->use_modal = true;
+			$this->modal = "&modal=1";
+			$this->config->js("process_modulesmanager_lightbox", "magnific");
+		} else {
+			if($this->modules->isInstalled("JqueryFancybox")){
+				$this->modules->JqueryFancybox;
+				$this->use_modal = true;
+				$this->modal = "&modal=1";
+				$this->config->js("process_modulesmanager_lightbox", "fancybox");
+			}
+		}
+
+		$this->set('cachefile','ModuleManager.cache');
+
 		$this->labelRequires = $this->_x("Requires", 'list'); // Label that precedes list of required prerequisite modules
 		$this->labelInstalls = $this->_x("Also installs", 'list'); // Label that precedes list of required prerequisite modules
+
+
+		// get current installed modules in PW and store it in array
+		// for later use to generate
+		foreach($this->modules as $module) {
+			$this->modulesArray[$module->className()] = 1;
+			wire('modules')->getModuleInfo($module->className()); // fixes problems
+		}
+		// get current uninstalled modules with flag 0
+		foreach($this->modules->getInstallable() as $module) {
+			$this->modulesArray[basename($module, '.module')] = 0;
+			wire('modules')->getModuleInfo(basename($module, '.module')); // fixes problems
+		}
+
 	}
 
 	public function initModules() {
@@ -100,6 +135,12 @@ class ModulesManager extends Process implements ConfigurableModule {
 	 * @return string output html string
 	 */
 	public function execute() {
+
+		if(!$this->modules->isInstalled("JqueryDataTables")){
+			$this->error($this->_("ModulesManager requires 'JqueryDataTables' module since version 2.0."));
+			return;
+		}
+
 		// check if we have the rights to download files from other domains
 		// using copy or file_get_contents
 		if(!ini_get('allow_url_fopen')) {
@@ -114,26 +155,91 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$this->error($this->_('Make sure your /site/modules directory is writeable by PHP.'));
 		}
 
-		// construct the cache file path for json feed
-		$cache_file = $this->config->paths->cache . $this->cacheFile;
-
 		// reset cache to scan for new modules downloaded, manually
 		// put into site modules folder and download current JSON feed
 		if($this->input->get->reset) {
 			// reset PW modules cache
 			$this->modules->resetCache();
 			// json feed download and cache
-			$this->createCacheFile($cache_file);
+			$this->createCacheFile();
 			// reload page without params
 			$this->session->redirect('./');
 		}
 
+
+
+		// output javascript config vars used by ModulesManager.js
+		$this->config->js("process_modulesmanager", $this->pages->get("parent=22,name=modulesmanager")->url . "getdata/");
+		$this->config->js("process_modulesmanager_filter_cat", $this->input->get->cat);
+
+
 		// get json module feed cache file,
 		// if not yet cached download and cache it
-		if(file_exists($cache_file)){
-			$this->modulesRemoteArray = $this->readCacheFile($cache_file);
+		if(file_exists($this->config->paths->cache . $this->cachefile)){
+			$this->modulesRemoteArray = $this->readCacheFile();
 		} else {
-			$this->modulesRemoteArray = $this->createCacheFile($cache_file);
+			$this->modulesRemoteArray = $this->createCacheFile();
+		}
+
+
+		$count = 0;
+		$this->all_categories = array();
+
+		// loop the module list we got from the json feed and we do
+		// various checks here to see if it's up to date or installed
+		foreach($this->modulesRemoteArray->items as $key => $module) {
+
+			$categories = array();
+
+			foreach($module->categories as $cat) $categories[$cat->name] = $cat->title;
+			//$all_categories = array_merge($all_categories, $categories);
+			$this->all_categories = array_merge($this->all_categories, $categories);
+
+
+
+			$filterout = false;
+
+			// filter for selected category
+			if( isset(wire('input')->get->cat) ) {
+				$selected_cat = wire('input')->get->cat;
+				if($selected_cat){
+					if(!array_key_exists(wire('input')->get->cat, $categories)) {
+						$filterout = true;
+					}
+				}
+			}
+
+			if(!$filterout) $count++;
+		}
+
+
+
+		$categories_form = $this->createCategoryForm()->render();
+
+
+		$pretext = '<p>' . sprintf($this->_("Modules found on modules.processwire.com (%d)"), $count) . '</p>';
+		//$pretext .= 'ProcessWire Version ' . $this->config->version;
+		$info = $this->getModuleInfo();
+
+		// $dataTable = $this->createTableMarkup();
+		$form = $this->createForm()->render();
+
+		return $pretext . $categories_form . $form . '<p>Modules Manager v'.$info['version'].'</p>' ; // . $pretext . $categories_form . $form .  '<p>Modules Manager v'.$info['version'].'</p>';
+	}
+
+
+	/**
+	 * Provides url method to get data for DataTables
+	 * @return string the json string needed by DataTables plugin
+	 */
+	public function executeGetData() {
+
+		// get json module feed cache file,
+		// if not yet cached download and cache it
+		if(file_exists($this->config->paths->cache . $this->cachefile)){
+			$this->modulesRemoteArray = $this->readCacheFile();
+		} else {
+			$this->modulesRemoteArray = $this->createCacheFile();
 		}
 
 		// get current installed modules in PW and store it in array
@@ -149,24 +255,6 @@ class ModulesManager extends Process implements ConfigurableModule {
 		}
 
 		$out = '';
-
-		// start output of module list
-		$this->module_table = wire('modules')->get('MarkupAdminDataTable');
-		$this->module_table->setEncodeEntities(false);
-		$header = array(
-			$this->_('Name/Version'),
-			$this->_('Module Title/Summary'),
-			$this->_('Categories'),
-			$this->_('Author(s)'),
-			$this->_('Added'),
-			$this->_('Modified'),
-			$this->_('Likes'),
-			$this->_('Status'),
-			$this->_('Action')
-		);
-
-		$this->module_table->headerRow($header);
-
 		$count = 0;
 		$this->all_categories = array();
 
@@ -207,84 +295,13 @@ class ModulesManager extends Process implements ConfigurableModule {
 			// lets add a link to the modules.processwire.com instead
 
 			$count++;
-
-			$authors = array();
-			foreach($module->authors as $auth) $authors[] = $auth->title;
-
-			$status = '<span>-</span>';
-			$version = '-';
-			$actions = '-';
-			$dependencies = '';
-
-			$remote_version = $this->formatVersion($module->module_version);
-
-			if(array_key_exists($module->class_name, $this->modulesArray)) {
-				// get module infos, we can't use modules->get(module_name) here
-				// as it would install the module, which we don't want at all
-
-				$info = wire('modules')->getModuleInfo($module->class_name);
-				$local_version = $this->formatVersion($info['version']);
-
-				if($this->modulesArray[$module->class_name] == 0) {
-
-					if(count($info['requires'])) {
-						$requires = $this->modules->getRequiresForInstall($module->class_name);
-						if(count($requires)) $dependencies .= "<br /><span class='notes'>$this->labelRequires - " . implode(', ', $requires) . "</span>";
-					} else $requires = array();
-
-					if(count($info['installs'])) {
-						$dependencies .= "<br /><span class='detail'>$this->labelInstalls - " . implode(', ', $info['installs']) . "</span>";
-					}
-
-					$status = 'found: ' . $local_version;
-
-					if(count($requires)) {
-						$actions = $this->getActions($module, $uninstallable, 'not_install');
-					} else {
-						$actions = $this->getActions($module, $uninstallable, 'install');
-					}
-				} else {
-					if($remote_version > $local_version) {
-						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span><br/>';
-						$status .= '<span class="ui-state-update">new version available!</span><br/>';
-
-						$actions = $this->getActions($module, $uninstallable, 'update');
-
-					} else {
-						$status = '<span class="ui-state-installed">installed: '.$local_version.'</span>';
-						$actions = $this->getActions($module, $uninstallable, 'edit');
-					}
-				}
-			} else {
-				$theme = isset($categories['admin-theme']) ? '&theme=1' : '' ;
-				$actions = $this->getActions($module, $uninstallable, 'download', $theme);
-			}
-
-			$this->module_table->row(array(
-				'<b class="mm_mname">' . $module->class_name . '</b>' . '<br/>'
-					.  $remote_version . " " . $module->release_state->title,
-				'<b>' . $module->title . '</b><br/>' . $module->summary . '<a href="'.$module->url.'" target="_blank" class="icon"> '
-					. $this->_("more") . '</a>' . $dependencies,
-				implode(', ', $categories),
-				implode(', ', $authors),
-				date('Y/m/d', $module->created),
-				date('Y/m/d', $module->modified),
-				'+' . $module->likes,
-				$status,
-				$actions
-			));
+			$out .= $this->createItemRow($module, $uninstallable);
 
 		}
 
+		$out = "{\"aaData\":[\n" . rtrim($out,",") . "\n]}";
+		return $out;
 
-
-		$categories_form = $this->createCategoryForm()->render();
-		$form = $this->createForm()->render();
-
-		$pretext = '<p>Modules found on modules.processwire.com ('.$count.') </p>';
-		//$pretext .= 'ProcessWire Version ' . $this->config->version;
-		$info = $this->getModuleInfo();
-		return $pretext . $categories_form . $form .  '<p>Modules Manager v'.$info['version'].'</p>';
 	}
 
 
@@ -303,6 +320,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 		// download the zip file and save it in assets directory
 		$success = false;
+
 		if($file = $this->downloadFile($url, $tmp_zip)) {
 			$this->message('Downloaded zip file successfully from '.$url);
 			// if successfully downloaded extract it
@@ -372,7 +390,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 		// check if modules isn't already installed and this isn't an update
 		if(!$this->modules->isInstalled($class_name)) {
-			$this->session->redirect("../install/?class=$class_name");
+			$this->session->redirect("../install/?class=$class_name{$this->modal}");
 		} else {
 			$this->fuel->set('processHeadline', 'You just updated '.$class_name);
 			$str = sprintf($this->_('Module `%s` was updated successfully. Ready to check if everything still work! Or if there are possibly new options.'),$class_name);
@@ -380,6 +398,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		}
 		return $text;
 	}
+
 
 	public function executeInstall() {
 
@@ -422,17 +441,163 @@ class ModulesManager extends Process implements ConfigurableModule {
 			$form->add($submit);
 		}
 
-		$button = $this->modules->get('InputfieldButton');
-		$button->attr('href', '../');
-		$button->attr('value', $this->_('back to Modules Manager'));
-		$button->attr('id', 'backtomanagerbutton');
-		$button->columnWidth = 100;
-		$form->add($button);
+		// $button = $this->modules->get('InputfieldButton');
+		// $button->attr('href', '../');
+		// $button->attr('value', $this->_('back to Modules Manager'));
+		// $button->attr('id', 'backtomanagerbutton');
+		// $button->columnWidth = 100;
+		// $form->add($button);
 
 		$text .= $form->render();
 
 		return $text;
 	}
+
+	/**
+	 * Install module and redirect to edit screen
+	 * Same a ProcessModule does but without post, so we can use it with modules manager
+	 * more easily
+	 */
+	public function executeInstallModule () {
+		$name = $this->input->get->install;
+		if($name && isset($this->modulesArray[$name]) && !$this->modulesArray[$name]) {
+			$module = $this->modules->get($name);
+			$this->modulesArray[$name] = 1;
+			$this->session->message($this->_("Module Install") . " - " . $module->className); // Message that precedes the name of the module installed
+			$this->session->redirect($this->config->urls->admin . "module/edit?name={$module->className}");
+		}
+	}
+
+	public function createItemRow($item, $uninstallable) {
+
+		$remote_version = $this->formatVersion($item->module_version);
+
+		$status = '<span>-</span>';
+        $version = '-';
+        $actions = '-';
+        $dependencies = '';
+
+		if(array_key_exists($item->class_name, $this->modulesArray)) {
+
+			// get module infos, we can't use modules->get(module_name) here
+			// as it would install the module, which we don't want at all
+			$info = wire('modules')->getModuleInfo($item->class_name);
+			$local_version = $this->formatVersion($info['version']);
+
+			if($this->modulesArray[$item->class_name] == 0) {
+
+				if(count($info['requires'])) {
+					$requires = $this->modules->getRequiresForInstall($item->class_name);
+					if(count($requires)) $dependencies .= "<br /><span class='notes'>$this->labelRequires - " . implode(', ', $requires) . "</span>";
+				} else $requires = array();
+
+				if(count($info['installs'])) {
+					$dependencies .= "<br /><span class='detail'>$this->labelInstalls - " . implode(', ', $info['installs']) . "</span>";
+				}
+
+				$status = 'found: ' . $local_version;
+
+				if(count($requires)) {
+					$actions = $this->getActions($item, $uninstallable, 'not_install');
+				} else {
+					$actions = $this->getActions($item, $uninstallable, 'install');
+				}
+			} else {
+				if($remote_version > $local_version) {
+					$status = '<span class="ui-state-installed">installed: ' . $local_version . '</span><br/>';
+					$status .= '<span class="ui-state-update">' . $this->_("new version available!") . '</span><br/>';
+
+					$actions = $this->getActions($item, $uninstallable, 'update');
+
+				} else {
+					$status = '<span class="ui-state-installed">installed: '.$local_version.'</span>';
+					$actions = $this->getActions($item, $uninstallable, 'edit');
+				}
+			}
+		} else {
+			$theme = isset($categories['admin-theme']) ? '&theme=1' : '' ;
+			$actions = $this->getActions($item, $uninstallable, 'download', $theme);
+		}
+
+
+        $str = '';
+        $str .= "\"<b>{$item->class_name}</b> $remote_version\",";
+        $summary = str_replace("\r\n","<br>", $item->summary);
+        // $summary = str_replace("\n","<br>",$item->summary);
+        $summary = str_replace("\r","<br>", $summary);
+        $str .= "\"<p><b>{$item->title}</b>";
+        $str .= "<br>".addcslashes($summary,"\"");
+        $str .= "<br><a href='$item->url' class='more_link'>" . $this->_("more") . "</a>";
+        $str .= $dependencies . "</p>\",";
+
+        $categories = array();
+        foreach($item->categories as $auth) $categories[] = $auth->title;
+        $categories = implode(", ",$categories);
+        $str .= "\"{$categories}\",";
+
+        $authors = array();
+        foreach($item->authors as $auth) $authors[] = $auth->title;
+        $authors = implode(", ",$authors);
+        $str .= "\"{$authors}\",";
+
+        $str .= "\"".date("Y/m/d",$item->created)."\",";
+        $str .= "\"".date("Y/m/d",$item->modified)."\",";
+
+        $str .= "\"{$item->likes}\",";
+        $str .= "\"".addcslashes($status,"\"")."\",";
+        $str .= "\"".addcslashes($actions,"\"")."\",\n";
+
+        return "[" . rtrim($str,"\n,") . "],";
+
+	}
+
+
+	public function createTableMarkup() {
+
+		$name_txt	 	= $this->_x('Name/Version', 'Table Head');
+		$title_txt		= $this->_x('Module Title/Summary', 'Table Head');
+		$categories_txt = $this->_x('Categories', 'Table Head');
+		$authors_txt 	= $this->_x('Author(s)', 'Table Head');
+		$added_txt 		= $this->_x('Added', 'Table Head');
+		$modified_txt	= $this->_x('Modified', 'Table Head');
+		$likes_txt		= $this->_x('Likes', 'Table Head');
+		$status_txt		= $this->_x('Status', 'Table Head');
+		$action_txt		= $this->_x('Action', 'Table Head');
+
+		$dataTable = "<table id='mm_datatable'>
+		    <thead>
+		        <tr>
+		            <th width='1%'>" . $name_txt . "</th>
+		            <th width='30%'>" . $title_txt . "</th>
+		            <th>" . $categories_txt . "</th>
+		            <th>" . $authors_txt . "</th>
+		            <th>" . $added_txt . "</th>
+		            <th>" . $modified_txt . "</th>
+		            <th width='1%'>" . $likes_txt . "</th>
+		            <th>" . $status_txt . "</th>
+		            <th width='1%'>" . $action_txt . "</th>
+		        </tr>
+		    </thead>
+		    <tfoot>
+		        <tr>
+		            <th width='1%'>" . $name_txt . "</th>
+		            <th width='30%'>" . $title_txt . "</th>
+		            <th>" . $categories_txt . "</th>
+		            <th>" . $authors_txt . "</th>
+		            <th>" . $added_txt . "</th>
+		            <th>" . $modified_txt . "</th>
+		            <th width='1%'>" . $likes_txt . "</th>
+		            <th>" . $status_txt . "</th>
+		            <th width='1%'>" . $action_txt . "</th>
+		        </tr>
+		    </tfoot>
+		    <tbody>
+		    </tbody>
+
+		</table>";
+		return $dataTable;
+	}
+
 
 	public function createForm(){
 		// build form
@@ -449,7 +614,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$submit->attr('class', $submit->attr('class') . ' head_button_clone');
 		$form->add($submit);
 
-		$table = $this->module_table->render();
+
+		$table = $this->createTableMarkup();
 		// add table and button to form field wrapper
 		$form->attr('value', $table);
 
@@ -480,32 +646,28 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$cats->columnWidth = 70;
 		$categories_form->append($cats);
 
-
-		// category select
-		$search = $this->modules->get('InputfieldText');
-		$search->attr('id+name', 'mm_filter');
-		$search->label = $this->_('Live Search');
-		$search->attr("type","search");
-		$search->columnWidth = 30;
-		$categories_form->append($search);
-
 		return $categories_form;
 	}
 
 	private function getActions($module, $uninstallable, $action='', $theme='') {
 
+		$install_url = $this->page->url . "installmodule/?install={$module->class_name}" . $this->modal;
+
+		$no_install_txt 	= $this->_("Uninstallable with Modules Manager");
+		$uninstallable_txt 	= $this->_("uninstallable");
+		$install_text 		= $this->_("install");
+		$no_url_found_text 	= $this->_("No download URL found");
+
 		if($uninstallable) {
-			return '(uninstallable)<br/><a href="'.$module->url.'" target="_blank" title="Uninstallable with Modules Manager">more</a>';
+			return '('.$uninstallable_txt.')<br/><a href="'.$module->url.'" target="_blank" title="'.$no_install_txt.'">' . $this->_("more") . '</a>';
 		}
 
 		$confirm = '';
 
 		if($theme) {
-			$install_text = $this->_('This will install the theme and delete the previous! If you have altered the /site/templates-admin/ theme or have your own, you might consider backing it up first.');
-			$confirm = " onclick='return confirm(\"$install_text\");'";
+			$install_confirm_text = $this->_('This will install the theme and delete the previous! If you have altered the /site/templates-admin/ theme or have your own, you might consider backing it up first.');
 		} else {
-			$install_text = $this->_('Ensure that you trust the source of the ZIP file before continuing!');
-			$confirm = " onclick='return confirm(\"$install_text\");'";
+			$install_confirm_text = $this->_('Ensure that you trust the source of the ZIP file before continuing!');
 		}
 
 		if($module->download_url) {
@@ -514,23 +676,23 @@ class ModulesManager extends Process implements ConfigurableModule {
 			} else {
 				$button = $this->modules->get('InputfieldMarkup');
 				if($action == 'edit') {
-					$url = "{$this->pages->get(21)->url}edit?name={$module->class_name}";
+					$url = "{$this->pages->get(21)->url}edit?name={$module->class_name}$this->modal";
 					$button->value = "<a href='$url' id='{$module->class_name}'>" . $this->_("edit") . "</a>";
 				}
 				else if($action == 'update') {
-					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}";
-					$button->value = "<a href='$url'$confirm id='{$module->class_name}'>" . $this->_("update") . "</a>";
+					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}$this->modal";
+					$button->value = "<a href='$url' class='confirm' data-confirmtext='$install_confirm_text' id='{$module->class_name}'>" . $this->_("update") . "</a>";
 				}
 				else if($action == 'download') {
-					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}";
-					$button->value = "<a href='$url'$confirm id='{$module->class_name}'>" . $this->_("download") . "</a>";
+					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}$this->modal";
+					$button->value = "<a href='$url' class='confirm' data-confirmtext='$install_confirm_text' id='{$module->class_name}'>" . $this->_("download") . "</a>";
 
 				}
 				else if($action == 'install') {
-					$button->value = "<button name='install' value='{$module->class_name}'>" . $this->_("install") . "</button>";
+					$button->value = "<a href='{$install_url}'>" . $install_text . "</a>";
 				}
 				else if($action == 'not_install') {
-					$button->value = "<button name='not_install' disabled='disabled' value='{$module->class_name}'><s>" . $this->_("install") . "</s></button>";
+					$button->value = "<a href='#'><s>" . $install_text . "</s></a>";
 				}
 
 				$actions = $button->render();
@@ -538,9 +700,9 @@ class ModulesManager extends Process implements ConfigurableModule {
 		} else {
 			// in case a module has no dl url but is already downloaded and can be installed
 			if($this->modules->isInstallable($module->class_name)) {
-				$actions = "<button name='install' value='{$module->class_name}'>install</button>";
+				$actions = "<button name='install' value='{$module->class_name}'>" . $install_text . "</button>";
 			} else {
-				$actions = '<a href="'.$module->url.'" target="_blank" title="No download URL found">more</a>';
+				$actions = '<a href="'.$module->url.'" target="_blank" title="' . $no_url_found_text . '">' . $this->_("more") . '</a>';
 			}
 		}
 		return $actions;
@@ -619,7 +781,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 		return true;
 	}
 
-	private function createCacheFile($cache_file) {
+	private function createCacheFile($cache_file = '') {
+		if(!$cache_file) $cache_file = $this->config->paths->cache . $this->cachefile;
 		$contents = file_get_contents($this->getConfig('remoteurl') . '?apikey=' . $this->getConfig('apikey') . '&limit=' . $this->getConfig('limit'));
 		if(!$handle = fopen($cache_file, 'w')) throw new WireException('cannot create cache file '.$cache_file);
 		if(!fwrite($handle, $contents)) throw new WireException('cannot write cache file '.$cache_file);
@@ -627,7 +790,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 		return json_decode($contents);
 	}
 
-	private function readCacheFile($cache_file) {
+	public function readCacheFile($cache_file = '') {
+		if(!$cache_file) $cache_file = $this->config->paths->cache . $this->cachefile;
 		if(!$handle = fopen($cache_file, 'r')) throw new WireException('cannot open cache file '.$cache_file);
 		if(!$contents = fread($handle, filesize($cache_file))) throw new WireException('cannot read cache file '.$cache_file);
 		fclose($handle);
