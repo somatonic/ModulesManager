@@ -820,7 +820,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public function uninstall() {
 		$found = $this->pages->find('name='.__CLASS__)->first();
 		if($found->id) $found->delete();
-		$cache_file = $this->config->paths->cache . $this->cacheFile;
+		$cache_file = $this->config->paths->cache . $this->cachefile;
 		if(file_exists($cache_file)) {
 			if(!unlink($cache_file)) throw new WireException('Could not delete cache file '.$cache_file);
 			else $this->message('Cache file deleted successfully '.$cache_file);
