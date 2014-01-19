@@ -17,6 +17,12 @@ This version is still beta and in testing. Feel free to try it out own your own 
 
 #### Versions Log
 
+2.0.0
+
+- added jQuery DataTables to list modules. This enables convenient browsing with pagination, live search filter and sorting. State saving via cookies is enabled so if you come back it shows the table how you left it.
+- added iframe modals for download, udpate, edit and install links. So you can now install modules without leaving the ModulesManager page. This is using Magnific lightbox by default, if installed, otherwise it will take the older Fancybox.
+- some more translations added
+
 1.1.1
 
 - added live search filtering, fuzzy text search only on name, author, categories and action
