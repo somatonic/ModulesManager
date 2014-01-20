@@ -32,7 +32,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	protected $modulesRemoteArray = array();
 	protected $downloadFileName = 'ModuleManagerDownload.zip';
 
-	public $cacheFile;
+	public $cachefile = 'ModuleManager.cache';
 
 	/**
 	 * getModuleInfo is a module required by all modules to tell ProcessWire about them
@@ -43,9 +43,10 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 200,
+			'version' => 210,
 			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
-			'href' => '',
+			'href' => 'http://processwire.com/talk/topic/1550-modules-manager/',
+			'author' => "Philipp 'Soma' Urlich",
 			'singular' => true,
 			'autoload' => false,
 			'permission' => 'modules-manager',
@@ -86,7 +87,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 			}
 		}
 
-		$this->set('cachefile','ModuleManager.cache');
+		// $this->set('cachefile','ModuleManager.cache');
 
 		$this->labelRequires = $this->_x("Requires", 'list'); // Label that precedes list of required prerequisite modules
 		$this->labelInstalls = $this->_x("Also installs", 'list'); // Label that precedes list of required prerequisite modules
@@ -781,7 +782,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		return true;
 	}
 
-	private function createCacheFile($cache_file = '') {
+	public function createCacheFile($cache_file = '') {
 		if(!$cache_file) $cache_file = $this->config->paths->cache . $this->cachefile;
 		$contents = file_get_contents($this->getConfig('remoteurl') . '?apikey=' . $this->getConfig('apikey') . '&limit=' . $this->getConfig('limit'));
 		if(!$handle = fopen($cache_file, 'w')) throw new WireException('cannot create cache file '.$cache_file);

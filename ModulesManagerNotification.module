@@ -1,0 +1,188 @@
+<?php
+
+/**
+ * Modules Manager Notification module
+ *
+ * Sends out update information for installed modules to an email
+ * This module required LazyCron core module installed
+ *
+ * @author Soma <philipp@urlich.ch>
+ *
+ */
+
+class ModulesManagerNotification extends WireData implements Module, ConfigurableModule {
+
+    protected static $intervals = array(
+        "every5Minutes",
+        "everyDay",
+        "every2Days",
+        "every4Days",
+        "everyWeek",
+        "every2Weeks",
+        "every4Weeks"
+    );
+
+    protected static $defaults = array(
+        'update_interval' => 'everyWeek',
+        'recipient_email' => '',
+        'from_email' => '',
+        'email_subject' => 'Site: yourdomain - ProcessWire module updates available'
+    );
+
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Modules Manager Notification',
+            'version' => 10,
+            'summary' => __('Send email notification to specified email address with installed modules updates available.'),
+            'href' => '',
+            'author' => "Philipp 'Soma' Urlich",
+            'singular' => true,
+            'autoload' => true,
+            'requires' => array("LazyCron", "ModulesManager")
+            );
+    }
+
+
+    public function init() {
+        if($this->active){
+            $this->addHook("LazyCron::$this->update_interval", $this, 'runLazyCronJob');
+        }
+    }
+
+    public function runLazyCronJob() {
+
+        $log = new FileLog(wire('config')->paths->logs . 'modulesmanager_notification_log.txt');
+        $log->prune(100000);
+        $log->save( " executed modules version update check" );
+
+        $modulesManager = $this->modules->get("ModulesManager");
+        $remoteModules = $modulesManager->createCachefile();
+        $module_email_text = $this->checkCacheUpdates($remoteModules);
+        if(strlen(trim($module_email_text))) {
+            $this->sendNotificationEmail($module_email_text);
+        }
+    }
+
+    /**
+     * Check for new module version
+     * @param  object/array $json items array from module feed
+     */
+    public function checkCacheUpdates($remoteModules) {
+
+        // get current installed modules in PW and store it in array
+        // for later use to generate
+        $modulesArray = array();
+        foreach($this->modules as $module) {
+            $modulesArray[$module->className()] = 1;
+            wire('modules')->getModuleInfo($module->className()); // fixes problems
+        }
+
+        $module_email_text = '';
+
+        foreach($remoteModules->items as $item) {
+
+            if(array_key_exists($item->class_name, $modulesArray)) {
+
+                $remote_version = $this->formatVersion($item->module_version);
+
+                // get module infos, we can't use modules->get(module_name) here
+                // as it would install the module, which we don't want at all
+                $info = wire('modules')->getModuleInfo($item->class_name);
+                $local_version = $this->formatVersion($info['version']);
+
+                if($remote_version > $local_version) {
+                    $module_text = sprintf($this->_('Module: %1$s v%2$s'), $item->class_name, $local_version);
+                    $module_text .= PHP_EOL;
+                    $module_text .= sprintf($this->_('Found new version available: v%1$s'), $remote_version);
+                    $module_text .= PHP_EOL;
+                    $module_text .= sprintf($this->_('More infos at: %1$s'), $item->url);
+                    $module_text .= PHP_EOL . "––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––" . PHP_EOL;
+                    $module_email_text .= $module_text;
+                    $module_email_text .= PHP_EOL . PHP_EOL;
+                }
+            }
+        }
+
+        return $module_email_text;
+    }
+
+    /**
+     * Send out email notification to site administrator
+     * @param  string $body email body text
+     */
+    protected function sendNotificationEmail($body) {
+        if(strlen(trim($this->recipient_email))) {
+
+            $headline = $this->_("Found following updates for installed modules:");
+            $headline .= PHP_EOL . PHP_EOL;
+            $body = $headline . $body;
+
+            // $file = fopen(wire('config')->paths->logs . 'modulesmanager_email_log.txt', "wb");
+            // fwrite( $file, $this->recipient_email . "\n" . $subject . "\n" . $body);
+            // fclose($file);
+
+            $header = '';
+            if($this->from_email){
+                $header = 'From: ' . $this->from_email . "\r\n" .
+                    'X-Mailer: PHP/' . phpversion();
+            }
+
+            mail($this->recipient_email, $this->email_subject, (string) $body, $header);
+        }
+    }
+
+
+    /**
+     * used internally for the module to convert version numbers of the modules
+     * @param  int $version version number | major minor revision
+     * @return string          returns string formatted version number
+     */
+    protected function formatVersion($version) {
+        return preg_replace('/(\d)(?=\d)/', '$1.', str_pad( (string)$version, 3, '0', STR_PAD_LEFT));
+    }
+
+
+    static public function getModuleConfigInputfields(array $data) {
+        $data = array_merge(self::$defaults, $data);
+
+        $fields = new InputfieldWrapper();
+        $modules = wire('modules');
+
+        $field = $modules->get('InputfieldCheckbox');
+        $field->attr('name', 'active');
+        $field->attr('checked', isset($data['active']) ? "checked" : '');
+        $field->label = 'Activate Module';
+        $fields->append($field);
+
+        $field = $modules->get('InputfieldEmail');
+        $field->attr('name', 'recipient_email');
+        $field->attr('value', $data['recipient_email']);
+        $field->label = __('E-Mail Recipient');
+        $fields->append($field);
+
+        $field = $modules->get('InputfieldEmail');
+        $field->attr('name', 'from_email');
+        $field->attr('value', $data['from_email']);
+        $field->label = __('E-Mail From Address');
+        $field->description = __('Will set "From" header with this email if specified.');
+        $fields->append($field);
+
+        $field = $modules->get('InputfieldText');
+        $field->attr('name', 'email_subject');
+        $field->attr('value', $data['email_subject']);
+        $field->label = __('E-Mail Subject');
+        $fields->append($field);
+
+        $field = $modules->get('InputfieldSelect');
+        $field->attr('name', 'update_interval');
+        foreach(self::$intervals as $interval) $field->addOption($interval, $interval);
+        $field->attr('value', $data['update_interval']);
+        $field->label = __('Interval');
+        $field->description = __('The lazy cron interval to check for module updates and send out email notification. I added the "every5Minutes" just for testing purposes.');
+        $field->notes = __('Note that this requires someone to hit your website to get executed, so interval times can vary.');
+        $fields->append($field);
+
+
+        return $fields;
+    }
+}

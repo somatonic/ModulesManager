@@ -17,6 +17,38 @@ This version is still beta and in testing. Feel free to try it out own your own 
 
 #### Versions Log
 
+2.1.0
+
+Added a new module to ModulesManager:
+
+##### Modules Manager Notification 0.1.0
+
+- Sends out update information for installed modules to an email
+- This module required LazyCron core module installed
+
+After install you need to define the interval, an recipient email, subject and optional a "from" email address. There's also a checkbox to activate/deactivate the module running the lazy cron job.
+
+Note that this requires someone to hit your website (or admin) to get executed, so interval times can vary.
+
+It will then refresh the module feed from modules.processwire.com on your installation and check for new modules. If any found it will send out an email notification to the email specified in the form of:
+
+```
+Found following updates for installed modules:
+
+Module: TextformatterHannaCode v0.1.4
+Found new version available: v0.1.5
+More infos at: http://modules.processwire.com/modules/process-hanna-code/
+––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+
+Module: InputfieldCKEditor v1.1.3
+Found new version available: v1.1.4
+More infos at: http://modules.processwire.com/modules/inputfield-ckeditor/
+––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+```
+
+It will also save a notification log modulesmanager_notification_log.txt  with an entry when the lazy cron was executed in your site/assets/logs/ folder.
+
+
 2.0.0
 
 - added jQuery DataTables to list modules. This enables convenient browsing with pagination, live search filter and sorting. State saving via cookies is enabled so if you come back it shows the table how you left it.
