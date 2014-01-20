@@ -25,6 +25,8 @@ Added a new module to ModulesManager:
 
 - Sends out update information for installed modules to an email
 - This module required LazyCron core module installed
+- Note this is something you want to run like once a week
+- When the lazy cron is running the request will be blocked for a few second, this is currently due to how the lazy cron works. Maybe we will be able to optimize this in future.
 
 After install you need to define the interval, an recipient email, subject and optional a "from" email address. There's also a checkbox to activate/deactivate the module running the lazy cron job.
 
