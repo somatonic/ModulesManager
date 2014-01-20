@@ -150,7 +150,8 @@ class ModulesManagerNotification extends WireData implements Module, Configurabl
 
         $field = $modules->get('InputfieldCheckbox');
         $field->attr('name', 'active');
-        $field->attr('checked', isset($data['active']) ? "checked" : '');
+        $field->attr('value', 1);
+        $field->attr('checked', $data['active'] == 1 ? "checked" : '');
         $field->label = 'Activate Module';
         $fields->append($field);
 
