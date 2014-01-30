@@ -32,7 +32,7 @@ class ModulesManagerNotification extends WireData implements Module, Configurabl
     public static function getModuleInfo() {
         return array(
             'title' => 'Modules Manager Notification',
-            'version' => 10,
+            'version' => 11,
             'summary' => __('Send email notification to specified email address with installed modules updates available.'),
             'href' => '',
             'author' => "Philipp 'Soma' Urlich",
@@ -152,7 +152,7 @@ class ModulesManagerNotification extends WireData implements Module, Configurabl
         $field->attr('name', 'active');
         $field->attr('value', 1);
         $field->attr('checked', $data['active'] == 1 ? "checked" : '');
-        $field->label = 'Activate Module';
+        $field->label = __('Activate Module');
         $fields->append($field);
 
         $field = $modules->get('InputfieldEmail');
