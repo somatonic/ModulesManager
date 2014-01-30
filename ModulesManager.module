@@ -43,8 +43,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 210,
-			'summary' => 'Browse Modules posted from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
+			'version' => 211,
+			'summary' => 'Browse Modules from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => 'http://processwire.com/talk/topic/1550-modules-manager/',
 			'author' => "Philipp 'Soma' Urlich",
 			'singular' => true,
@@ -496,7 +496,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 					$dependencies .= "<br /><span class='detail'>$this->labelInstalls - " . implode(', ', $info['installs']) . "</span>";
 				}
 
-				$status = 'found: ' . $local_version;
+				$status = $this->_('found') . ': ' . $local_version;
 
 				if(count($requires)) {
 					$actions = $this->getActions($item, $uninstallable, 'not_install');
@@ -505,13 +505,13 @@ class ModulesManager extends Process implements ConfigurableModule {
 				}
 			} else {
 				if($remote_version > $local_version) {
-					$status = '<span class="ui-state-installed">installed: ' . $local_version . '</span><br/>';
+					$status = '<span class="ui-state-installed">' . $this->_('installed') . ': ' . $local_version . '</span><br/>';
 					$status .= '<span class="ui-state-update">' . $this->_("new version available!") . '</span><br/>';
 
 					$actions = $this->getActions($item, $uninstallable, 'update');
 
 				} else {
-					$status = '<span class="ui-state-installed">installed: '.$local_version.'</span>';
+					$status = '<span class="ui-state-installed">' . $this->_('installed') . ': '.$local_version.'</span>';
 					$actions = $this->getActions($item, $uninstallable, 'edit');
 				}
 			}
