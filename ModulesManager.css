@@ -24,6 +24,12 @@ a.icon:hover {
   display: none;
 }
 /**
+ * larget magnific popup
+ */
+.mfp-iframe-holder .mfp-content {
+  max-width: 1200px!important;
+}
+/**
  * datatables styles
  */
 .dataTables_wrapper {
