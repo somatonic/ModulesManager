@@ -17,6 +17,12 @@ This version is still beta and in testing. Feel free to try it out own your own 
 
 #### Versions Log
 
+2.1.1
+
+- some more translations added
+- made Magnific popup wider
+
+
 2.1.0
 
 Added a new module to ModulesManager:
@@ -97,5 +103,4 @@ It will also save a notification log modulesmanager_notification_log.txt  with a
 1.0.2
 
 - add support for admin themes install
-
 
