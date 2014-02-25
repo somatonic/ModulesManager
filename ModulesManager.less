@@ -1,0 +1,109 @@
+
+.AdminDataTable {
+    line-height: 1.3em;
+    font-size: 0.8em;
+}
+.AdminDataTable thead tr th {
+    padding: 10px;
+}
+.AdminDataTable tbody tr td {
+    padding: 10px;
+}
+.AdminDataTable tbody tr:hover td {
+}
+
+a.icon:hover { background-color: #fff; }
+.ui-state-update { color: red; }
+.ui-state-installed { color: #4db101; }
+
+.mm_mname { white-space: nowrap; }
+
+.mm_notfiltered{display: none;}
+
+/**
+ * larget magnific popup
+ */
+.mfp-iframe-holder .mfp-content {
+    max-width: 1200px!important;
+}
+
+/**
+ * datatables styles
+ */
+
+.dataTables_wrapper{
+    padding-bottom: 1em;
+    padding-top: 1em;
+    border-bottom: 1px solid #ddd;
+}
+
+.dataTables_wrapper:before,
+.dataTables_wrapper:after {
+  content: "";
+  display: table;
+  border-collapse: collapse; }
+
+.dataTables_wrapper:after {
+  clear: both; }
+
+.dataTables_wrapper {
+  min-height: 0;
+}
+
+.dataTables_wrapper .paging_full_numbers a.paginate_button,
+.dataTables_wrapper .paging_full_numbers a.paginate_active{
+    padding: 7px 10px;
+}
+.dataTables_wrapper .paging_full_numbers a.paginate_active{
+    background-color: #000;
+    color: #fff!important;
+}
+
+#mm_datatable_processing {
+    top: 0;
+    margin-top: 0;
+    padding: 3px 0 2px 0;
+    border: 0;
+    font-size: 14px;
+}
+
+
+@base_color1: #b1b6b1;
+@base_color2: #dedc46;
+@base_color3: #de9e40;
+
+table#mm_datatable tr.odd td.sorting_1 { background-color: lighten(@base_color1,25); }
+table#mm_datatable tr.odd td.sorting_2 { background-color: lighten(@base_color2,25); }
+table#mm_datatable tr.odd td.sorting_3 { background-color: lighten(@base_color3,25); }
+table#mm_datatable tr.even td.sorting_1 { background-color: lighten(@base_color1,20); }
+table#mm_datatable tr.even td.sorting_2 { background-color: lighten(@base_color2,20); }
+table#mm_datatable tr.even td.sorting_3 { background-color: lighten(@base_color3,20); }
+
+
+.dataTables_filter{
+    margin: 0 0 1em 0;
+}
+table#mm_datatable{
+    margin: 1em 0;
+}
+
+table#mm_datatable thead th {
+    font-weight: normal;
+}
+
+
+table#mm_datatable tr td { font-size: 0.8em; line-height: 1.4em; }
+
+table#mm_datatable tr.even{
+    background-color: #f7f7f7;
+}
+table#mm_datatable tr.odd{
+    background-color: #fff;
+}
+
+table#mm_datatable tr.even.row_selected td {
+    background-color: #b3cbd9;
+}
+table#mm_datatable tr.odd.row_selected td {
+    background-color: #c4deed;
+}

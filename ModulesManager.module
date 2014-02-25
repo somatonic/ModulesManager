@@ -43,7 +43,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 211,
+			'version' => 212,
 			'summary' => 'Browse Modules from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => 'http://processwire.com/talk/topic/1550-modules-manager/',
 			'author' => "Philipp 'Soma' Urlich",
@@ -527,7 +527,7 @@ class ModulesManager extends Process implements ConfigurableModule {
         // $summary = str_replace("\n","<br>",$item->summary);
         $summary = str_replace("\r","<br>", $summary);
         $str .= "\"<p><b>{$item->title}</b>";
-        $str .= "<br>".addcslashes($summary,"\"");
+        $str .= "<br>" . addcslashes($summary,"\"");
         $str .= "<br><a href='$item->url' class='more_link'>" . $this->_("more") . "</a>";
         $str .= $dependencies . "</p>\",";
 
@@ -541,12 +541,12 @@ class ModulesManager extends Process implements ConfigurableModule {
         $authors = implode(", ",$authors);
         $str .= "\"{$authors}\",";
 
-        $str .= "\"".date("Y/m/d",$item->created)."\",";
-        $str .= "\"".date("Y/m/d",$item->modified)."\",";
+        $str .= "\"" . date("Y/m/d",$item->created) . "\",";
+        $str .= "\"" . date("Y/m/d",$item->modified) . "\",";
 
         $str .= "\"{$item->likes}\",";
-        $str .= "\"".addcslashes($status,"\"")."\",";
-        $str .= "\"".addcslashes($actions,"\"")."\",\n";
+        $str .= "\"" . addcslashes($status,"\"") . "\",";
+        $str .= "\"" . addcslashes($actions,"\"") . "\",\n";
 
         return "[" . rtrim($str,"\n,") . "],";
 
@@ -652,8 +652,6 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 	private function getActions($module, $uninstallable, $action='', $theme='') {
 
-		$install_url = $this->page->url . "installmodule/?install={$module->class_name}" . $this->modal;
-
 		$no_install_txt 	= $this->_("Uninstallable with Modules Manager");
 		$uninstallable_txt 	= $this->_("uninstallable");
 		$install_text 		= $this->_("install");
@@ -680,19 +678,19 @@ class ModulesManager extends Process implements ConfigurableModule {
 					$url = "{$this->pages->get(21)->url}edit?name={$module->class_name}$this->modal";
 					$button->value = "<a href='$url' id='{$module->class_name}'>" . $this->_("edit") . "</a>";
 				}
-				else if($action == 'update') {
-					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}$this->modal";
+				if($action == 'update') {
+					$url = "{$this->page->url}download/?url=" . urlencode($module->download_url) . "&class={$module->class_name}{$theme}$this->modal";
 					$button->value = "<a href='$url' class='confirm' data-confirmtext='$install_confirm_text' id='{$module->class_name}'>" . $this->_("update") . "</a>";
 				}
-				else if($action == 'download') {
-					$url = "{$this->page->url}download/?url={$module->download_url}&class={$module->class_name}{$theme}$this->modal";
+				if($action == 'download') {
+					$url = "{$this->page->url}download/?url=" . urlencode($module->download_url) . "&class={$module->class_name}{$theme}$this->modal";
 					$button->value = "<a href='$url' class='confirm' data-confirmtext='$install_confirm_text' id='{$module->class_name}'>" . $this->_("download") . "</a>";
-
 				}
-				else if($action == 'install') {
+				if($action == 'install') {
+					$install_url = $this->page->url . "installmodule/?install={$module->class_name}" . $this->modal;
 					$button->value = "<a href='{$install_url}'>" . $install_text . "</a>";
 				}
-				else if($action == 'not_install') {
+				if($action == 'not_install') {
 					$button->value = "<a href='#'><s>" . $install_text . "</s></a>";
 				}
 

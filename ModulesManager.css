@@ -61,9 +61,8 @@ a.icon:hover {
   top: 0;
   margin-top: 0;
   padding: 3px 0 2px 0;
-  color: #fff;
-  background-color: #58a8d7;
   border: 0;
+  font-size: 14px;
 }
 table#mm_datatable tr.odd td.sorting_1 {
   background-color: #f3f4f3;

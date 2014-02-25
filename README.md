@@ -15,13 +15,18 @@ If you update a module it will do the same process as above, and just replace th
 This version is still beta and in testing. Feel free to try it out own your own risk. Current version uses file_get_contents" and "copy" php methods to retrieve the json feed from external domain. This requires the php to allow it in php (allow_url_fopen). Download of the module zip is done using copy(). Also on my local install I had to adjust the /site/modules/ and /site/assets/ directory to have write permission by php.
 
 
-#### Versions Log
+#### Changes Log
+
+
+2.1.2
+
+- urlencode for module download/update urls
+- small css fix for processing bar
 
 2.1.1
 
 - some more translations added
 - made Magnific popup wider
-
 
 2.1.0
 
