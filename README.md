@@ -1,4 +1,4 @@
-# Modules Manager beta for ProcessWire2.+
+# Modules Manager for ProcessWire2.+
 
 Module Manager enables you to browse the modules directory on modules.processwire.com, download, install or update them.
 
@@ -8,6 +8,8 @@ Module Manager enables you to browse the modules directory on modules.processwir
 - "allow_url_fopen" to be enabled in your php.ini.
 - "openssl" PHP extension needs to be installed on your server.
 - PHP needs to have read/write access to the /site/modules/ directory
+
+#### How does it work
 
 When installed you'll have a new admin page under "Setup", feel free to move it to wherever you like. On first load it will download and cache a json file from where it will look for modules already installed, new versions, or modules not yet installed or not downloaded and provide actions according to its state.
 
