@@ -4,10 +4,10 @@ Module Manager enables you to browse the modules directory on modules.processwir
 
 #### Requires
 
-- requires the [JqueryDataTables](http://modules.processwire.com/modules/jquery-data-tables/) module to be installed before you can install Modules Manager.
+- the [JqueryDataTables](http://modules.processwire.com/modules/jquery-data-tables/) module to be installed before you can install Modules Manager.
 - "allow_url_fopen" to be enabled in your php.ini.
 - "openssl" PHP extension needs to be installed on your server.
-- PHP needs to have read/write access to the /site/modules/ directory
+- PHP to have read/write access to the /site/modules/ directory
 
 #### How does it work
 
