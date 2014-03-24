@@ -2,7 +2,13 @@
 
 Module Manager enables you to browse the modules directory on modules.processwire.com, download, install or update them.
 
-#### What it does
+#### Requires
+
+- requires the [JqueryDataTables](http://modules.processwire.com/modules/jquery-data-tables/) module to be installed before you can install Modules Manager.
+- "allow_url_fopen" to be enabled in your php.ini.
+- "openssl" PHP extension needs to be installed on your server.
+- PHP needs to have read/write access to the /site/modules/ directory
+
 When installed you'll have a new admin page under "Setup", feel free to move it to wherever you like. On first load it will download and cache a json file from where it will look for modules already installed, new versions, or modules not yet installed or not downloaded and provide actions according to its state.
 
 There's a **refresh** button to look for new modules already put in modules directory and refresh the cache file with the remote list of modules.
@@ -12,11 +18,11 @@ If you download a module it will create a temp zip file in the assets folder, ex
 If you update a module it will do the same process as above, and just replace the current files with the new ones.
 
 #### Notes
+
 This version is still beta and in testing. Feel free to try it out own your own risk. Current version uses file_get_contents" and "copy" php methods to retrieve the json feed from external domain. This requires the php to allow it in php (allow_url_fopen). Download of the module zip is done using copy(). Also on my local install I had to adjust the /site/modules/ and /site/assets/ directory to have write permission by php.
 
 
 #### Changes Log
-
 
 2.1.2
 
