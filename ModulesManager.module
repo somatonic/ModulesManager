@@ -43,7 +43,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 212,
+			'version' => 213,
 			'summary' => 'Browse Modules from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => 'http://processwire.com/talk/topic/1550-modules-manager/',
 			'author' => "Philipp 'Soma' Urlich",
@@ -234,6 +234,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 	 * @return string the json string needed by DataTables plugin
 	 */
 	public function executeGetData() {
+
+		$this->modules->resetCache();
 
 		// get json module feed cache file,
 		// if not yet cached download and cache it
@@ -763,6 +765,10 @@ class ModulesManager extends Process implements ConfigurableModule {
 				$this->error('error creating module directory at: '.$directory);
 				return false;
 			}
+		} else {
+			if(!$this->removeDir($directory)){
+				return false;
+			}
 		}
 		return true;
 	}
@@ -859,6 +865,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 		$field->attr('value', $data['max_redirects']);
 		$field->label = 'Max Redirects for file_get_contents stream context (in case)';
 		$fields->append($field);
+
 
 		return $fields;
 	}
