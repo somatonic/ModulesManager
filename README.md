@@ -26,6 +26,11 @@ This version is still beta and in testing. Feel free to try it out own your own 
 
 #### Changes Log
 
+
+2.1.4
+
+- added "Premium Modules" to exclude list, they still show but are not downloadable (cause they're commercial)
+
 2.1.3
 
 - module folders get now deleted before writing new version

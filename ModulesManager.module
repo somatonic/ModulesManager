@@ -25,7 +25,8 @@ class ModulesManager extends Process implements ConfigurableModule {
 	// uninstallable
 	protected $exclude_categories = array(
 		'language-pack' => 'Language Packs',
-		'site-profile' => 'Site Profiles'
+		'site-profile' => 'Site Profiles',
+		'premium' => 'Premium Modules',
 		);
 
 	protected $modulesArray = array();
@@ -43,7 +44,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 213,
+			'version' => 214,
 			'summary' => 'Browse Modules from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => 'http://processwire.com/talk/topic/1550-modules-manager/',
 			'author' => "Philipp 'Soma' Urlich",
