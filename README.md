@@ -26,6 +26,9 @@ This version is still beta and in testing. Feel free to try it out own your own 
 
 #### Changes Log
 
+2.1.5
+
+- added external links if available below description to project (github), direct download and forum support thread.
 
 2.1.4
 
