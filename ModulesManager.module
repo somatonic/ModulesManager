@@ -44,7 +44,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 214,
+			'version' => 215,
 			'summary' => 'Browse Modules from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => 'http://processwire.com/talk/topic/1550-modules-manager/',
 			'author' => "Philipp 'Soma' Urlich",
@@ -525,14 +525,23 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 
         $str = '';
-        $str .= "\"<b>{$item->class_name}</b> $remote_version\",";
+        $str .= "\"<b>{$item->class_name}</b> $remote_version";
+        $str .= "\",";
+
         $summary = str_replace("\r\n","<br>", $item->summary);
-        // $summary = str_replace("\n","<br>",$item->summary);
         $summary = str_replace("\r","<br>", $summary);
         $str .= "\"<p><b>{$item->title}</b>";
         $str .= "<br>" . addcslashes($summary,"\"");
-        $str .= "<br><a href='$item->url' class='more_link'>" . $this->_("more") . "</a>";
-        $str .= $dependencies . "</p>\",";
+        $str .= "<br>";
+        $str .= "<a href='$item->url' class='more_link'>" . $this->_("more") . "</a>";
+
+        $links_str = '';
+        if($item->project_url) $links_str .= " | <a href='$item->project_url' target='_blank' class='nolightbox'>" . $this->_("Project Page") . "</a>";
+        if($item->download_url) $links_str .= " | <a href='$item->download_url' target='_blank' class='nolightbox'>" . $this->_("Direct Download") . "</a>";
+        if($item->forum_url) $links_str .= " | <a href='$item->forum_url' target='_blank' class='nolightbox'>" . $this->_("Forum Support Thread") . "</a>";
+        if(strlen($links_str)) $str .= "<p>" . trim($links_str," | ") . "</p>";
+
+        $str .= "<p>" . $dependencies . "</p>\",";
 
         $categories = array();
         foreach($item->categories as $auth) $categories[] = $auth->title;
