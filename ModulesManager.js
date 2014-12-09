@@ -45,7 +45,7 @@
 
         var is_more_link = false;
 
-        $('#mm_datatable').on('click', 'tbody tr a', function(e) {
+        $('#mm_datatable').on('click', 'tbody tr a:not(.nolightbox)', function(e) {
 
             e.preventDefault();
 
