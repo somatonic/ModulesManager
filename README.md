@@ -26,6 +26,10 @@ This version is still beta and in testing. Feel free to try it out own your own 
 
 #### Changes Log
 
+2.1.6
+
+- fix for "\n" line breaks in summary causing an error in jQueryDataTables parsing the json.
+
 2.1.5
 
 - added external links if available below description to project (github), direct download and forum support thread.

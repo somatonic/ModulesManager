@@ -44,7 +44,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 215,
+			'version' => 216,
 			'summary' => 'Browse Modules from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => 'http://processwire.com/talk/topic/1550-modules-manager/',
 			'author' => "Philipp 'Soma' Urlich",
@@ -529,6 +529,7 @@ class ModulesManager extends Process implements ConfigurableModule {
         $str .= "\",";
 
         $summary = str_replace("\r\n","<br>", $item->summary);
+        $summary = str_replace("\n","<br>", $summary);
         $summary = str_replace("\r","<br>", $summary);
         $str .= "\"<p><b>{$item->title}</b>";
         $str .= "<br>" . addcslashes($summary,"\"");
