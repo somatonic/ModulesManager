@@ -44,7 +44,7 @@ class ModulesManager extends Process implements ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			'title' => 'Modules Manager',
-			'version' => 216,
+			'version' => 217,
 			'summary' => 'Browse Modules from modules.processwire.com. Download, update or install them. Consider this a proof of concept and use at your own risk.',
 			'href' => 'http://processwire.com/talk/topic/1550-modules-manager/',
 			'author' => "Philipp 'Soma' Urlich",
@@ -799,7 +799,36 @@ class ModulesManager extends Process implements ConfigurableModule {
 
 	public function createCacheFile($cache_file = '') {
 		if(!$cache_file) $cache_file = $this->config->paths->cache . $this->cachefile;
-		$contents = file_get_contents($this->getConfig('remoteurl') . '?apikey=' . $this->getConfig('apikey') . '&limit=' . $this->getConfig('limit'));
+		$url = $this->getConfig('remoteurl');
+		$url .= '?apikey='. $this->getConfig('apikey');
+		$url .= '&limit='. $this->getConfig('limit');
+
+		$contents = file_get_contents($url);
+
+		//Processwire module API thing now has pagination. Maxes out at like...375, but there are nearly 600 modules now
+		//Keep getting new pages until we're on the last page.
+		$contents_decoded = json_decode($contents, true);
+		while($contents_decoded['pageNum'] <= $contents_decoded['pageTotal']){
+			$contents_decoded['pageNum']++;
+
+			$url = $this->getConfig('remoteurl');
+			if(substr_compare($url, '/', -1) === 0){
+				//https://stackoverflow.com/a/10473026/1286962
+				$url .= '/';
+			}
+			$url .= 'page'. $contents_decoded['pageNum'] .'/';
+			$url .= '?apikey='. $this->getConfig('apikey');
+			$url .= '&limit='. $this->getConfig('limit');
+
+			$extra_contents = file_get_contents($url);
+
+			$extra_contents_decoded = json_decode($extra_contents, true);
+
+			$contents_decoded['items'] = array_merge_recursive($contents_decoded['items'], $extra_contents_decoded['items']);
+			$contents_decoded['pageNum'] = $extra_contents_decoded['pageNum'];
+		}
+
+		$contents = json_encode($contents_decoded);
 		if(!$handle = fopen($cache_file, 'w')) throw new WireException('cannot create cache file '.$cache_file);
 		if(!fwrite($handle, $contents)) throw new WireException('cannot write cache file '.$cache_file);
 		fclose($handle);
